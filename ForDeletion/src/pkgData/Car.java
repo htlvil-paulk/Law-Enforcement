@@ -2,11 +2,11 @@ package pkgData;
 
 public class Car {
 	private int id;
-	private String name;
+	private String _name;
 	
 	public Car()
 	{
 		id = 0;
-		name = "Audi A4";
+		_name = "Audi A4";
 	}
 }
