@@ -1,0 +1,13 @@
+package at.paulk.data;
+
+public enum EnumFlag
+{
+	VIOLENT,
+	DRUG_PROBLEM,
+	FUGITIVE,
+	SEX_OFFENDER,
+	MENTALLY_ILL,
+	SUICIDAL,
+	ARMED,
+	PART_OF_ILLEGAL_GROUPS
+}
