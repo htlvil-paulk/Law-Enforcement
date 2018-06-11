@@ -14,7 +14,7 @@ public class LawEnforcementDB
 		try
 		{
 			JFrame start = new GUIMain();
-			start.setVisible(true);
+			start.setVisible(true);;
 		}
 		catch (SQLException e)
 		{
