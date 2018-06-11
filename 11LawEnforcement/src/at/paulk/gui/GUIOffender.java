@@ -84,11 +84,10 @@ public class GUIOffender extends JFrame
 	 */
 	public GUIOffender(Officer officer) throws Exception
 	{
-		// if(officer == null)
-		// {
-		// throw new
-		// Exception("Permission denied: The officer must be specified!");
-		// }
+		if (officer == null)
+		{
+			throw new Exception("Permission denied: The officer must be specified!");
+		}
 
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		setBounds(100, 100, 900, 780);
@@ -291,8 +290,7 @@ public class GUIOffender extends JFrame
 		return txtNationality;
 	}
 
-	private JFormattedTextField getFrmtdtxtfldDateOfBirth()
-			throws ParseException
+	private JFormattedTextField getFrmtdtxtfldDateOfBirth() throws ParseException
 	{
 		if (frmtdtxtfldDateOfBirth == null)
 		{
@@ -302,8 +300,7 @@ public class GUIOffender extends JFrame
 			mf.setValidCharacters("1234567890.");
 
 			frmtdtxtfldDateOfBirth = new JFormattedTextField(mf);
-			frmtdtxtfldDateOfBirth.setText(LocalDate.now().format(
-					DateTimeFormatter.ofPattern("dd.MM.uuuu")));
+			frmtdtxtfldDateOfBirth.setText(LocalDate.now().format(DateTimeFormatter.ofPattern("dd.MM.uuuu")));
 			frmtdtxtfldDateOfBirth.setBounds(704, 105, 149, 34);
 		}
 		return frmtdtxtfldDateOfBirth;
@@ -451,8 +448,7 @@ public class GUIOffender extends JFrame
 	{
 		if (chckBxIsPartOfIllegalOrganizations == null)
 		{
-			chckBxIsPartOfIllegalOrganizations = new JCheckBox(
-					"is part of illegal organizations/groups/unions");
+			chckBxIsPartOfIllegalOrganizations = new JCheckBox("is part of illegal organizations/groups/unions");
 			chckBxIsPartOfIllegalOrganizations.setBounds(284, 70, 345, 20);
 		}
 		return chckBxIsPartOfIllegalOrganizations;
@@ -543,16 +539,21 @@ public class GUIOffender extends JFrame
 		return comboBoxGender;
 	}
 
-	private JLabel getLblDescription() {
-		if (lblDescription == null) {
+	private JLabel getLblDescription()
+	{
+		if (lblDescription == null)
+		{
 			lblDescription = new JLabel("Description");
 			lblDescription.setLabelFor(getTxtpnDescription());
 			lblDescription.setBounds(12, 234, 149, 34);
 		}
 		return lblDescription;
 	}
-	private JTextPane getTxtpnDescription() {
-		if (txtpnDescription == null) {
+
+	private JTextPane getTxtpnDescription()
+	{
+		if (txtpnDescription == null)
+		{
 			txtpnDescription = new JTextPane();
 			txtpnDescription.setBounds(173, 234, 695, 87);
 		}

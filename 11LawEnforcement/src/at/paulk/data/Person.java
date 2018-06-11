@@ -1,5 +1,6 @@
 package at.paulk.data;
 
+import java.sql.Blob;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
@@ -7,23 +8,23 @@ public abstract class Person
 {
 	private int id;
 	private int idCardNumber;
-	private String pathToPicture;
+	private String nationality;
+	private Blob picture;
 	private String firstName, lastName;
 	private EnumGender gender;
 	private String address;
 	private LocalDate dateOfBirth;
 	private String birthplace;
 	protected final static String DATE_FORMAT = "dd.MM.uuuu";
-	
-	
-	public Person(int id, int idCardNumber, String pathToPicture, String firstName,
-			String lastName, EnumGender gender, String address,
-			LocalDate dateOfBirth, String birthplace)
+
+	public Person(int id, int idCardNumber, String nationality, Blob picture, String firstName, String lastName,
+			EnumGender gender, String address, LocalDate dateOfBirth, String birthplace)
 	{
 		super();
 		setId(id);
 		setIdCardNumber(idCardNumber);
-		setPathToPicture(pathToPicture);
+		setNationality(nationality);
+		setPicture(picture);
 		setFirstName(firstName);
 		setLastName(lastName);
 		setGender(gender);
@@ -31,35 +32,35 @@ public abstract class Person
 		setDateOfBirth(dateOfBirth);
 		setBirthplace(birthplace);
 	}
-	
-	//CTOR with String as dateOfBirth
-	public Person(int id, int idCardNumber, String pathToPicture, String firstName,
-			String lastName, EnumGender gender, String address,
-			String dateOfBirth, String birthplace)
+
+	// CTOR with String as dateOfBirth
+	public Person(int id, int idCardNumber, String nationality, Blob picture, String firstName, String lastName,
+			EnumGender gender, String address, String dateOfBirth, String birthplace)
 	{
-		this(id, idCardNumber, pathToPicture, firstName, lastName, gender, address, LocalDate.parse(dateOfBirth, DateTimeFormatter.ofPattern(DATE_FORMAT)), birthplace);
+		this(id, idCardNumber, nationality, picture, firstName, lastName, gender, address,
+				LocalDate.parse(dateOfBirth, DateTimeFormatter.ofPattern(DATE_FORMAT)), birthplace);
 	}
 
-	//CTOR without id
-	public Person(int idCardNumber, String pathToPicture, String firstName,
-			String lastName, EnumGender gender, String address,
-			LocalDate dateOfBirth, String birthplace)
+	// CTOR without id
+	public Person(int idCardNumber, String nationality, Blob picture, String firstName, String lastName,
+			EnumGender gender, String address, LocalDate dateOfBirth, String birthplace)
 	{
-		this(-99, idCardNumber, pathToPicture, firstName, lastName, gender, address, dateOfBirth, birthplace);
+		this(-99, idCardNumber, nationality, picture, firstName, lastName, gender, address, dateOfBirth, birthplace);
 	}
-	
-	//CTOR without id and String as dateOfBirth
-	public Person(int idCardNumber, String pathToPicture, String firstName,
-			String lastName, EnumGender gender, String address,
-			String dateOfBirth, String birthplace)
+
+	// CTOR without id and String as dateOfBirth
+	public Person(int idCardNumber, String nationality, Blob picture, String firstName, String lastName,
+			EnumGender gender, String address, String dateOfBirth, String birthplace)
 	{
-		this(-99, idCardNumber, pathToPicture, firstName, lastName, gender, address, LocalDate.parse(dateOfBirth, DateTimeFormatter.ofPattern(DATE_FORMAT)), birthplace);
+		this(-99, idCardNumber, nationality, picture, firstName, lastName, gender, address,
+				LocalDate.parse(dateOfBirth, DateTimeFormatter.ofPattern(DATE_FORMAT)), birthplace);
 	}
-	
+
 	public int getId()
 	{
 		return id;
 	}
+
 	public void setId(int id)
 	{
 		this.id = id;
@@ -75,19 +76,21 @@ public abstract class Person
 		this.idCardNumber = idCardNumber;
 	}
 
-	public String getPathToPicture()
+	public Blob getPicture()
 	{
-		return pathToPicture;
+		return picture;
 	}
-	public void setPathToPicture(String pathToPicture)
+
+	public void setPicture(Blob picture)
 	{
-		this.pathToPicture = pathToPicture;
+		this.picture = picture;
 	}
 
 	public String getFirstName()
 	{
 		return firstName;
 	}
+
 	public void setFirstName(String firstName)
 	{
 		this.firstName = firstName;
@@ -97,6 +100,7 @@ public abstract class Person
 	{
 		return lastName;
 	}
+
 	public void setLastName(String lastName)
 	{
 		this.lastName = lastName.toUpperCase();
@@ -106,6 +110,7 @@ public abstract class Person
 	{
 		return gender;
 	}
+
 	public void setGender(EnumGender gender)
 	{
 		this.gender = gender;
@@ -115,6 +120,7 @@ public abstract class Person
 	{
 		return address;
 	}
+
 	public void setAddress(String address)
 	{
 		this.address = address;
@@ -124,14 +130,17 @@ public abstract class Person
 	{
 		return dateOfBirth;
 	}
+
 	public String getDateOfBirthAsString()
 	{
 		return dateOfBirth.format(DateTimeFormatter.ofPattern(DATE_FORMAT));
-	}	
+	}
+
 	public void setDateOfBirth(LocalDate dateOfBirth)
 	{
 		this.dateOfBirth = dateOfBirth;
 	}
+
 	public void setDateOfBirth(String dateOfBirth)
 	{
 		setDateOfBirth(LocalDate.parse(dateOfBirth, DateTimeFormatter.ofPattern(DATE_FORMAT)));
@@ -141,10 +150,19 @@ public abstract class Person
 	{
 		return birthplace;
 	}
+
 	public void setBirthplace(String birthplace)
 	{
 		this.birthplace = birthplace;
 	}
 
-	
+	public String getNationality()
+	{
+		return nationality;
+	}
+
+	public void setNationality(String nationality)
+	{
+		this.nationality = nationality;
+	}
 }

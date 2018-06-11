@@ -1,7 +1,9 @@
 package at.paulk.data;
 
+import java.sql.Blob;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 
 public final class Officer extends Person
 {
@@ -10,38 +12,38 @@ public final class Officer extends Person
 	private EnumRank rank;
 	
 	//Main CTOR
-	public Officer(int id, int idCardNumber, String pathToPicture, String firstName,
+	public Officer(int id, int idCardNumber, String nationality, Blob picture, String firstName,
 			String lastName, EnumGender gender, String address,
 			LocalDate dateOfBirth, String birthplace, String username, char[] password, EnumRank rank) throws Exception
 	{
-		super(id, idCardNumber, pathToPicture, firstName, lastName, gender, address,
+		super(id, idCardNumber, nationality, picture, firstName, lastName, gender, address,
 				dateOfBirth, birthplace);
 		this.username = username;
 		changePassword(null, password);
 		setRank(rank);
 	}
 
-	public Officer(int id, int idCardNumber, String pathToPicture, String firstName,
+	public Officer(int id, int idCardNumber, String nationality, Blob picture, String firstName,
 			String lastName, EnumGender gender, String address,
 			String dateOfBirth, String birthplace, String username, char[] password, EnumRank rank) throws Exception
 	{
-		this(id, idCardNumber, pathToPicture, firstName, lastName, gender, address,
+		this(id, idCardNumber, nationality, picture, firstName, lastName, gender, address,
 				LocalDate.parse(dateOfBirth, DateTimeFormatter.ofPattern("dd.MM.uuuu")), birthplace, username, password, rank);
 	}
 
-	public Officer(int idCardNumber, String pathToPicture, String firstName, String lastName,
+	public Officer(int idCardNumber, String nationality, Blob picture, String firstName, String lastName,
 			EnumGender gender, String address, LocalDate dateOfBirth,
 			String birthplace, String username, char[] password, EnumRank rank) throws Exception
 	{
-		this(-99, idCardNumber, pathToPicture, firstName, lastName, gender, address,
+		this(-99, idCardNumber, nationality, picture, firstName, lastName, gender, address,
 				dateOfBirth, birthplace, username, password, rank);
 	}
 
-	public Officer(int idCardNumber, String pathToPicture, String firstName, String lastName,
+	public Officer(int idCardNumber, String nationality, Blob picture, String firstName, String lastName,
 			EnumGender gender, String address, String dateOfBirth,
 			String birthplace, String username, char[] password, EnumRank rank) throws Exception
 	{
-		this(-99, idCardNumber, pathToPicture, firstName, lastName, gender, address,
+		this(-99, idCardNumber, nationality, picture, firstName, lastName, gender, address,
 				LocalDate.parse(dateOfBirth, DateTimeFormatter.ofPattern("dd.MM.uuuu")), birthplace, username, password, rank);
 	}
 
@@ -74,6 +76,19 @@ public final class Officer extends Person
 	public void setRank(EnumRank rank)
 	{
 		this.rank = rank;
+	}
+
+	@Override
+	public String toString()
+	{
+		return "Officer [ID=" + getId() + " - " + rank + " "
+				+ getFirstName() + " " + getLastName() + ", " + getDateOfBirthAsString() + "]";
+	}
+
+	public char[] getPassword()
+	{
+		// TODO Auto-generated method stub
+		return password;
 	}
 
 }

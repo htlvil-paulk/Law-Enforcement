@@ -1,5 +1,6 @@
 package at.paulk.data;
 
+import java.sql.Blob;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
@@ -9,45 +10,45 @@ public class Suspect extends Person
 {
 	private TreeSet<EnumFlag> flags = new TreeSet<>();
 
-	public Suspect(int id, String pathToPicture, String firstName,
+	public Suspect(int id, int idCardNumber, String nationality, Blob picture, String firstName,
 			String lastName, EnumGender gender, String address,
 			LocalDate dateOfBirth, String birthplace, Collection<EnumFlag> flags)
 	{
-		super(id, pathToPicture, firstName, lastName, gender, address,
+		super(id, idCardNumber, nationality, picture, firstName, lastName, gender, address,
 				dateOfBirth, birthplace);
 		addFlags(flags);
 	}
 
-	public Suspect(int id, String pathToPicture, String firstName,
+	public Suspect(int id, int idCardNumber, String nationality, Blob picture, String firstName,
 			String lastName, EnumGender gender, String address,
 			LocalDate dateOfBirth, String birthplace)
 	{
-		this(id, pathToPicture, firstName, lastName, gender, address,
+		this(id, idCardNumber, nationality, picture, firstName, lastName, gender, address,
 				dateOfBirth, birthplace, null);
 	}
 
-	public Suspect(int id, String pathToPicture, String firstName,
+	public Suspect(int id, int idCardNumber, String nationality, Blob picture, String firstName,
 			String lastName, EnumGender gender, String address,
 			String dateOfBirth, String birthplace)
 	{
-		this(id, pathToPicture, firstName, lastName, gender, address,
+		this(id, idCardNumber, nationality, picture, firstName, lastName, gender, address,
 				LocalDate.parse(dateOfBirth, DateTimeFormatter.ofPattern(DATE_FORMAT)),
 				birthplace);
 	}
 
-	public Suspect(String pathToPicture, String firstName, String lastName,
+	public Suspect(int idCardNumber, String nationality, Blob picture, String firstName, String lastName,
 			EnumGender gender, String address, LocalDate dateOfBirth,
 			String birthplace)
 	{
-		this(-99, pathToPicture, firstName, lastName, gender, address, dateOfBirth,
+		this(-99, idCardNumber, nationality, picture, firstName, lastName, gender, address, dateOfBirth,
 				birthplace);
 	}
 
-	public Suspect(String pathToPicture, String firstName, String lastName,
+	public Suspect(int idCardNumber, String nationality, Blob picture, String firstName, String lastName,
 			EnumGender gender, String address, String dateOfBirth,
 			String birthplace)
 	{
-		this(pathToPicture, firstName, lastName, gender, address,
+		this(idCardNumber, nationality, picture, firstName, lastName, gender, address,
 				LocalDate.parse(dateOfBirth, DateTimeFormatter.ofPattern(DATE_FORMAT)),
 				birthplace);
 	}

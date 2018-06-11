@@ -1,6 +1,9 @@
 package at.paulk.main;
 
+import java.sql.SQLException;
+
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 
 import at.paulk.gui.GUIMain;
 
@@ -10,13 +13,17 @@ public class LawEnforcementDB
 	{
 		try
 		{
-			//new Officer(1, 998213541, "", "Kevin", "Paul", EnumGender.MALE, "nowhere", LocalDate.now(), "Villach", "paulk", "password".toCharArray(), EnumRank.GENERAL)
 			JFrame start = new GUIMain();
 			start.setVisible(true);
 		}
+		catch (SQLException e)
+		{
+	        JOptionPane.showMessageDialog(null, "Error: Connection to the database cannot be established!", "Initialization failed - " + at.paulk.gui.Settings.APPLICATION_NAME, JOptionPane.ERROR_MESSAGE);
+			e.printStackTrace();
+		}
 		catch (Exception e)
 		{
-			// TODO Auto-generated catch block
+	        JOptionPane.showMessageDialog(null, e.getMessage(), "Initialization failed - " + at.paulk.gui.Settings.APPLICATION_NAME, JOptionPane.ERROR_MESSAGE);
 			e.printStackTrace();
 		}
 	}

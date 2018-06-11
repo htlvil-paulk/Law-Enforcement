@@ -1,6 +1,8 @@
 package at.paulk.gui;
 
 import java.awt.EventQueue;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -14,7 +16,7 @@ import javax.swing.JButton;
 
 import at.paulk.data.Officer;
 
-public class GUISearch extends JFrame
+public class GUISearch extends JFrame implements ActionListener
 {
 
 	/**
@@ -39,9 +41,14 @@ public class GUISearch extends JFrame
 	private Officer currentOfficer;
 	/**
 	 * Create the frame.
+	 * @throws Exception 
 	 */
-	public GUISearch(Officer officer)
+	public GUISearch(Officer officer) throws Exception
 	{
+		if (officer == null)
+		{
+			throw new Exception("Permission denied: The officer must be specified!");
+		}
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		setBounds(100, 100, 900, 500);
 		contentPane = new JPanel();
@@ -54,14 +61,10 @@ public class GUISearch extends JFrame
 		initializeNonGUIComponents(officer);
 	}
 	
-	
-
 	private void initializeNonGUIComponents(Officer officer)
 	{
 		currentOfficer = officer;
 	}
-
-
 
 	private JPanel getPanel()
 	{
@@ -194,6 +197,7 @@ public class GUISearch extends JFrame
 		{
 			btnSearchForSuspects = new JButton("Search For Suspects");
 			btnSearchForSuspects.setBounds(505, 78, 270, 43);
+			btnSearchForSuspects.addActionListener(this);
 		}
 		return btnSearchForSuspects;
 	}
@@ -220,5 +224,26 @@ public class GUISearch extends JFrame
 			lblHeaderResults.setBounds(12, 12, 852, 30);
 		}
 		return lblHeaderResults;
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent e)
+	{
+		try
+		{
+			if (e.getSource() == btnSearchForSuspects)
+			{
+				
+			}
+			else
+			{
+				
+			}
+		}
+		catch (Exception e2)
+		{
+			// TODO: handle exception
+		}
+		
 	}
 }

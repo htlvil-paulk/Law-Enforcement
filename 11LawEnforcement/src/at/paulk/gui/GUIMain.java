@@ -10,6 +10,7 @@ import javax.swing.JLabel;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -18,6 +19,8 @@ import javax.swing.JTextField;
 import javax.swing.JPasswordField;
 import javax.swing.JButton;
 
+import at.paulk.data.Database;
+import at.paulk.data.EnumRank;
 import at.paulk.data.Officer;
 
 public class GUIMain extends JFrame implements ActionListener
@@ -44,11 +47,13 @@ public class GUIMain extends JFrame implements ActionListener
 	private JLabel label;
 
 	private Officer currentOfficer;
+	private Database db;
 
 	/**
 	 * Create the frame.
+	 * @throws SQLException 
 	 */
-	public GUIMain()
+	public GUIMain() throws SQLException
 	{
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 900, 540);
@@ -58,12 +63,18 @@ public class GUIMain extends JFrame implements ActionListener
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
+		contentPane.add(getMainPanel());
 		contentPane.add(getLoginPanel());
 		contentPane.add(getBtnLogin());
 		contentPane.add(getLblBanner());
-		contentPane.add(getMainPanel());
 		contentPane.add(getLblWelcome());
 		contentPane.add(getLabel());
+		initializeNonGUIComponents();
+	}
+	
+	private void initializeNonGUIComponents() throws SQLException
+	{
+		db = Database.createInstance();
 		doLogout();
 	}
 
@@ -98,7 +109,7 @@ public class GUIMain extends JFrame implements ActionListener
 		if (txtUsername == null)
 		{
 			txtUsername = new JTextField();
-			txtUsername.setText("Username");
+			txtUsername.setText("kreuzf");
 			txtUsername.setColumns(10);
 		}
 		return txtUsername;
@@ -119,7 +130,7 @@ public class GUIMain extends JFrame implements ActionListener
 		if (pwdPassword == null)
 		{
 			pwdPassword = new JPasswordField();
-			pwdPassword.setText("Password");
+			pwdPassword.setText("");
 		}
 		return pwdPassword;
 	}
@@ -152,7 +163,7 @@ public class GUIMain extends JFrame implements ActionListener
 		if (mainPanel == null)
 		{
 			mainPanel = new JPanel();
-			mainPanel.setBounds(12, 267, 876, 205);
+			mainPanel.setBounds(12, 215, 876, 257);
 			mainPanel.setLayout(new GridLayout(4, 2, 0, 0));
 			mainPanel.add(getBtnSearch());
 			mainPanel.add(getBtnAddRecord());
@@ -233,19 +244,19 @@ public class GUIMain extends JFrame implements ActionListener
 
 			if (e.getSource() == btnLogin)
 			{
-				doLogin();
+				doLogin(txtUsername.getText(), pwdPassword.getPassword());
 			}
 			else if (e.getSource() == btnAddRecord)
 			{
-				new GUIOffender(null);
+				new GUIOffender(currentOfficer);
 			}
 			else if (e.getSource() == btnOfficerManagement)
 			{
-				new GUIOfficer(null);
+				new GUIOfficer(currentOfficer);
 			}
 			else if (e.getSource() == btnSearch)
 			{
-				new GUISearch(null);
+				new GUISearch(currentOfficer);
 			}
 			else if (e.getSource() == btnLogout)
 			{
@@ -254,25 +265,28 @@ public class GUIMain extends JFrame implements ActionListener
 		}
 		catch (Exception e1)
 		{
-			lblWelcome.setText("Error!");
+			lblWelcome.setText("Error: " + e1.getMessage());
+			e1.printStackTrace();
 		}
 	}
 
-	public void doLogin()
+	public void doLogin(String username, char[] password) throws Exception
 	{
-		// currentOfficer = db.createOfficer()
+		 currentOfficer = db.login(username, password);
 
-//		if(currentOfficer.getRank() != EnumRank.ASPIRANT)
-//		{
-				btnAddRecord.setEnabled(true);
-//		}
+		if(currentOfficer.getRank() != EnumRank.ASPIRANT)
+		{
+			btnAddRecord.setEnabled(true);
+		}
 
 		btnSearch.setEnabled(true);
 		btnOfficerManagement.setEnabled(true);
 		btnLogout.setEnabled(true);
-//		lblWelcome.setText("Welcome, " + currentOfficer.getRank().toString() + " " + currentOfficer.getLastName() + "!");
-		
+		lblWelcome.setText("Welcome, " + currentOfficer.getRank().toString() + " " + currentOfficer.getLastName() + "!");
+		btnLogin.setVisible(false);
 		mainPanel.setVisible(true);
+		txtUsername.setEnabled(false);
+		pwdPassword.setEnabled(false);
 	}
 	
 	private void doLogout()
@@ -286,6 +300,9 @@ public class GUIMain extends JFrame implements ActionListener
 			}
 		}
 		mainPanel.setVisible(false);
-		pwdPassword.setText("");
+		pwdPassword.setText("secret");
+		btnLogin.setVisible(true);
+		txtUsername.setEnabled(true);
+		pwdPassword.setEnabled(true);
 	}
 }
