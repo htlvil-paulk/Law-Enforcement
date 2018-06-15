@@ -7,6 +7,7 @@ import java.util.Arrays;
 
 public final class Officer extends Person
 {
+	private int officerId;
 	private String username;
 	private char[] password;
 	private EnumRank rank;
@@ -14,10 +15,11 @@ public final class Officer extends Person
 	//Main CTOR
 	public Officer(int id, int idCardNumber, String nationality, Blob picture, String firstName,
 			String lastName, EnumGender gender, String address,
-			LocalDate dateOfBirth, String birthplace, String username, char[] password, EnumRank rank) throws Exception
+			LocalDate dateOfBirth, String birthplace, int officerId, String username, char[] password, EnumRank rank) throws Exception
 	{
 		super(id, idCardNumber, nationality, picture, firstName, lastName, gender, address,
 				dateOfBirth, birthplace);
+		this.officerId = officerId;
 		this.username = username;
 		changePassword(null, password);
 		setRank(rank);
@@ -25,10 +27,18 @@ public final class Officer extends Person
 
 	public Officer(int id, int idCardNumber, String nationality, Blob picture, String firstName,
 			String lastName, EnumGender gender, String address,
-			String dateOfBirth, String birthplace, String username, char[] password, EnumRank rank) throws Exception
+			String dateOfBirth, String birthplace, int officerId, String username, char[] password, EnumRank rank) throws Exception
 	{
 		this(id, idCardNumber, nationality, picture, firstName, lastName, gender, address,
-				LocalDate.parse(dateOfBirth, DateTimeFormatter.ofPattern("dd.MM.uuuu")), birthplace, username, password, rank);
+				LocalDate.parse(dateOfBirth, DateTimeFormatter.ofPattern("dd.MM.uuuu")), birthplace, officerId, username, password, rank);
+	}
+	
+	public Officer(int id, int idCardNumber, String nationality, Blob picture, String firstName,
+			String lastName, EnumGender gender, String address,
+			String dateOfBirth, String birthplace, String username, int officerId, char[] password, EnumRank rank) throws Exception
+	{
+		this(id, idCardNumber, nationality, picture, firstName, lastName, gender, address,
+				LocalDate.parse(dateOfBirth, DateTimeFormatter.ofPattern("dd.MM.uuuu")), birthplace, officerId, username, password, rank);
 	}
 
 	public Officer(int idCardNumber, String nationality, Blob picture, String firstName, String lastName,
@@ -36,7 +46,7 @@ public final class Officer extends Person
 			String birthplace, String username, char[] password, EnumRank rank) throws Exception
 	{
 		this(-99, idCardNumber, nationality, picture, firstName, lastName, gender, address,
-				dateOfBirth, birthplace, username, password, rank);
+				dateOfBirth, birthplace, -99, username, password, rank);
 	}
 
 	public Officer(int idCardNumber, String nationality, Blob picture, String firstName, String lastName,
@@ -44,7 +54,12 @@ public final class Officer extends Person
 			String birthplace, String username, char[] password, EnumRank rank) throws Exception
 	{
 		this(-99, idCardNumber, nationality, picture, firstName, lastName, gender, address,
-				LocalDate.parse(dateOfBirth, DateTimeFormatter.ofPattern("dd.MM.uuuu")), birthplace, username, password, rank);
+				LocalDate.parse(dateOfBirth, DateTimeFormatter.ofPattern("dd.MM.uuuu")), birthplace, -99, username, password, rank);
+	}
+
+	public int getOfficerId()
+	{
+		return officerId;
 	}
 
 	public String getUsername()
@@ -61,7 +76,7 @@ public final class Officer extends Person
 	{
 		if(password == null || password.equals(oldPassword))
 		{
-			oldPassword = newPassword;
+			password = newPassword;
 		}
 		else
 		{

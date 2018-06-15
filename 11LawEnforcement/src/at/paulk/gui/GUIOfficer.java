@@ -135,6 +135,10 @@ public class GUIOfficer extends JFrame implements ActionListener, ListSelectionL
 		doLoadOfficer(officer);
 		doFillList();
 		modOfficer.setSelectedItem(currentOfficer);
+		if (officer.getRank() != EnumRank.GENERAL)
+		{
+			adminPanel.setVisible(false);
+		}
 		doEnterViewMode();
 	}
 
@@ -570,6 +574,7 @@ public class GUIOfficer extends JFrame implements ActionListener, ListSelectionL
 		{
 			btnDeleteOfficer = new JButton("Delete Officer");
 			btnDeleteOfficer.setBounds(158, 142, 134, 25);
+			btnDeleteOfficer.addActionListener(this);
 		}
 		return btnDeleteOfficer;
 	}
@@ -686,8 +691,7 @@ public class GUIOfficer extends JFrame implements ActionListener, ListSelectionL
 		{
 			if (e.getSource() == btnLoadOfficer)
 			{
-				System.out.println(modOfficer.getSelectedItem());
-				doLoadOfficer((Officer) modOfficer.getSelectedItem());
+				doLoadOfficer((Officer) list.getSelectedValue());
 			}
 			else if (e.getSource() == btnAddOfficer)
 			{
@@ -701,15 +705,11 @@ public class GUIOfficer extends JFrame implements ActionListener, ListSelectionL
 				btnSaveChanges.setVisible(false);
 				pwdPassword.setVisible(false);
 				lblPassword.setVisible(false);
-				db.addOfficer(doCreateOfficerFromInput());
-			}
-			else if (e.getSource() == btnLoadOfficer)
-			{
-				doLoadOfficer((Officer) modOfficer.getSelectedItem());
+				db.addOfficer(doCreateOfficerFromInput(true));
 			}
 			else if (e.getSource() == btnDeleteOfficer)
 			{
-				doDeleteOfficer((Officer) modOfficer.getSelectedItem());
+				doDeleteOfficer((Officer) list.getSelectedValue());
 			}
 			else if (e.getSource() == mntmLoadLoggedinOfficer)
 			{
@@ -831,7 +831,7 @@ public class GUIOfficer extends JFrame implements ActionListener, ListSelectionL
 		comboBoxGender.setEnabled(false);
 	}
 
-	private Officer doCreateOfficerFromInput() throws Exception
+	private Officer doCreateOfficerFromInput(boolean isNewOfficer) throws Exception
 	{
 		Officer o;
 
@@ -846,10 +846,15 @@ public class GUIOfficer extends JFrame implements ActionListener, ListSelectionL
 		String birthplace = txtBirthplace.getText();
 		String username = txtUsername.getText();
 		char[] password = pwdPassword.getPassword();
+		//TODO dbg
+		System.out.println(String.valueOf(password));
 		EnumRank rank = (EnumRank) comboBoxRank.getSelectedItem();
 
 		o = new Officer(idCardNumber, nationality, picture, firstName, lastName, gender, address, dateOfBirth,
 				birthplace, username, password, rank);
+		
+		//TODO dbg
+		System.out.println(String.valueOf(o.getPassword()));
 		return o;
 	}
 

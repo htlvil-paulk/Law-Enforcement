@@ -62,7 +62,7 @@ public class Database
 	{
 		Officer o = null;
 
-		String select = "SELECT p.id, p.idcardnumber, p.citizenship, p.picture, p.name, p.lastname, p.dateofbirth, p.birthplace, p.gender, p.address, oc.rank FROM Person p"
+		String select = "SELECT p.id, p.idcardnumber, p.citizenship, p.picture, p.name, p.lastname, p.dateofbirth, p.birthplace, p.gender, p.address, oc.id \"officerId\", oc.rank FROM Person p"
 				+ " INNER JOIN OfficerCredential oc ON p.idOfficerCredential = oc.id"
 				+ " WHERE username LIKE ? AND password LIKE ?";
 		createConnection();
@@ -87,10 +87,12 @@ public class Database
 			String address = rs.getString("address");
 			String birthplace = rs.getString("birthplace");
 			LocalDate dateOfBirth = rs.getDate("dateOfBirth").toLocalDate();
+			
+			int officerId = rs.getInt("officerId");
 			EnumRank rank = EnumRank.valueOf(rs.getString("rank"));
 
 			o = new Officer(id, idCardNumber, citizenship, picture, firstName, lastName, gender, address, dateOfBirth,
-					birthplace, username, password, rank);
+					birthplace, officerId, username, password, rank);
 		}
 
 		closeConnection();
@@ -133,16 +135,17 @@ public class Database
 	public ArrayList<Officer> selectOfficers() throws Exception
 	{
 		ArrayList<Officer> officers = new ArrayList<>();
-		String select = "SELECT p.id, p.idcardnumber, p.citizenship, p.picture, p.name, p.lastname, p.dateofbirth, p.birthplace, p.gender, p.address, oc.username, oc.password, oc.rank "
+		String select = "SELECT p.id, p.idcardnumber, p.citizenship, p.picture, p.name, p.lastname, p.dateofbirth, p.birthplace, p.gender, p.address, oc.id \"officerId\", oc.username, oc.password, oc.rank "
 				+ " FROM Person p" + " INNER JOIN OfficerCredential oc ON p.idOfficerCredential = oc.id"
 				+ " WHERE flagPerson LIKE 'OFFICER'";
+		
 		createConnection();
 
 		PreparedStatement stmt = conn.prepareStatement(select, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 
 		ResultSet rs = stmt.executeQuery();
 
-		if (rs.next())
+		while (rs.next())
 		{
 			int id = rs.getInt("id");
 			int idCardNumber = rs.getInt("idcardnumber");
@@ -154,12 +157,14 @@ public class Database
 			String address = rs.getString("address");
 			String birthplace = rs.getString("birthplace");
 			LocalDate dateOfBirth = rs.getDate("dateOfBirth").toLocalDate();
+			
+			int officerId = rs.getInt("officerId");
 			String username = rs.getString("username");
 			char[] password = rs.getString("password").toCharArray();
 			EnumRank rank = EnumRank.valueOf(rs.getString("rank"));
 
 			officers.add(new Officer(id, idCardNumber, citizenship, picture, firstName, lastName, gender, address,
-					dateOfBirth, birthplace, username, password, rank));
+					dateOfBirth, birthplace, officerId, username, password, rank));
 		}
 
 		closeConnection();
@@ -227,21 +232,32 @@ public class Database
 		closeConnection();
 	}
 
-	public void deleteOfficer(Officer selectedItem) throws SQLException
+	public void deleteOfficer(Officer selectedItem) throws SQLException, OfficerException
 	{
 		String delete1 = "DELETE FROM Person" + " WHERE id=?";
-		String delete2 = "DELETE FROM OfficerCredential" + "WHERE username=?";
+		String delete2 = "DELETE FROM OfficerCredential " + "WHERE id=?";
 
-		createConnection();
+		createConnection(); 
 		
 		PreparedStatement stmt1 = conn.prepareStatement(delete1);
 		PreparedStatement stmt2 = conn.prepareStatement(delete2);
 
 		stmt1.setInt(1, selectedItem.getId());
-		stmt2.setString(1, selectedItem.getUsername());
 		
-		stmt1.executeUpdate();
-		stmt2.executeUpdate();
+		stmt2.setInt(1, selectedItem.getOfficerId());
+		
+		int returnValue = stmt1.executeUpdate();
+		if (returnValue == 0)
+		{
+			throw new OfficerException("Officer has not been deleted properly!");
+		}
+
+		returnValue = stmt2.executeUpdate();
+		if (returnValue == 0)
+		{
+			conn.rollback();
+			throw new OfficerException("Officer has not been deleted properly!");
+		}
 
 		closeConnection();
 	}
