@@ -85,10 +85,6 @@ public class GUIOfficer extends JFrame implements ActionListener, ListSelectionL
 	private JList<Officer> list;
 	private DefaultComboBoxModel<Officer> modOfficer = new DefaultComboBoxModel<>();
 	private JButton btnDeleteOfficer;
-
-	// Non-GUI Components
-	private Database db;
-	private Officer currentOfficer;
 	private JButton btnLoadOfficer;
 	private JButton btnAddOfficer;
 	private JButton btnSaveChanges;
@@ -98,6 +94,11 @@ public class GUIOfficer extends JFrame implements ActionListener, ListSelectionL
 	private JButton btnUploadNewPicture;
 	private JLabel lblPassword;
 	private JPasswordField pwdPassword;
+
+	// Non-GUI Components
+	private Database db;
+	private Officer currentOfficer;
+	private Officer selectedOfficer;
 
 	/**
 	 * Create the frame.
@@ -691,6 +692,7 @@ public class GUIOfficer extends JFrame implements ActionListener, ListSelectionL
 		{
 			if (e.getSource() == btnLoadOfficer)
 			{
+				doEnterViewMode();
 				doLoadOfficer((Officer) list.getSelectedValue());
 			}
 			else if (e.getSource() == btnAddOfficer)
@@ -702,9 +704,6 @@ public class GUIOfficer extends JFrame implements ActionListener, ListSelectionL
 			else if (e.getSource() == btnSaveChanges)
 			{
 				doEnterViewMode();
-				btnSaveChanges.setVisible(false);
-				pwdPassword.setVisible(false);
-				lblPassword.setVisible(false);
 				db.addOfficer(doCreateOfficerFromInput(true));
 			}
 			else if (e.getSource() == btnDeleteOfficer)
@@ -713,6 +712,7 @@ public class GUIOfficer extends JFrame implements ActionListener, ListSelectionL
 			}
 			else if (e.getSource() == mntmLoadLoggedinOfficer)
 			{
+				doEnterViewMode();
 				doLoadOfficer(currentOfficer);
 			}
 			else if (e.getSource() == btnUploadNewPicture)
@@ -722,6 +722,12 @@ public class GUIOfficer extends JFrame implements ActionListener, ListSelectionL
 				chooser.setFileFilter(filter);
 				int returnVal = chooser.showOpenDialog(this);
 				System.out.println(chooser.getSelectedFile());
+				db.uploadPicture(currentOfficer, chooser.getSelectedFile());
+			}
+			else if (e.getSource() == btnChangePassword)
+			{
+				System.out.println("PW changed");
+				db.changePassword(currentOfficer, pwdOldPassword.getPassword(), pwdNewPassword.getPassword());
 			}
 		}
 		catch (Exception e2)
@@ -829,6 +835,10 @@ public class GUIOfficer extends JFrame implements ActionListener, ListSelectionL
 		txtLastName.setEditable(false);
 		comboBoxRank.setEnabled(false);
 		comboBoxGender.setEnabled(false);
+
+		btnSaveChanges.setVisible(false);
+		pwdPassword.setVisible(false);
+		lblPassword.setVisible(false);
 	}
 
 	private Officer doCreateOfficerFromInput(boolean isNewOfficer) throws Exception

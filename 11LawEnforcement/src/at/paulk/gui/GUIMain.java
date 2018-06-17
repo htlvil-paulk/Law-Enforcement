@@ -304,5 +304,6 @@ public class GUIMain extends JFrame implements ActionListener
 		btnLogin.setVisible(true);
 		txtUsername.setEnabled(true);
 		pwdPassword.setEnabled(true);
+		lblWelcome.setText("Please login!");
 	}
 }
