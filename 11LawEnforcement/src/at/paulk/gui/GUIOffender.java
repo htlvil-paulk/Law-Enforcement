@@ -7,6 +7,9 @@ import javax.swing.text.MaskFormatter;
 import javax.swing.JLabel;
 
 import java.awt.Color;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.sql.Blob;
 import java.text.ParseException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -18,13 +21,16 @@ import javax.swing.JComboBox;
 import javax.swing.JFormattedTextField;
 
 import at.paulk.data.EnumGender;
+import at.paulk.data.EnumRank;
 import at.paulk.data.Officer;
+import at.paulk.data.Suspect;
+
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JTextPane;
 
-public class GUIOffender extends JFrame
+public class GUIOffender extends JFrame implements ActionListener
 {
 	/**
 	 * 
@@ -558,5 +564,39 @@ public class GUIOffender extends JFrame
 			txtpnDescription.setBounds(173, 234, 695, 87);
 		}
 		return txtpnDescription;
+	}
+
+	
+	@Override
+	public void actionPerformed(ActionEvent e)
+	{
+		try
+		{
+			
+		}
+		catch (Exception e2)
+		{
+			e2.printStackTrace();
+		}
+	}
+	
+	private Suspect doCreateOffenderFromInput(boolean isNewOfficer) throws Exception
+	{
+		Suspect s;
+
+		int idCardNumber = Integer.parseInt(txtIDCardNumber.getText());
+		String nationality = txtNationality.getText();
+		Blob picture = null;
+		String firstName = txtName.getText();
+		String lastName = txtLastName.getText();
+		EnumGender gender = (EnumGender) comboBoxGender.getSelectedItem();
+		String address = txtAddress.getText();
+		String dateOfBirth = frmtdtxtfldDateOfBirth.getText();
+		String birthplace = txtBirthplace.getText();
+		
+		s = new Suspect(idCardNumber, nationality, picture, firstName, lastName, gender, address, dateOfBirth,
+				birthplace);
+		
+		return s;
 	}
 }

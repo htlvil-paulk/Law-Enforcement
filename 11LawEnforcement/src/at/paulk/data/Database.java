@@ -1,5 +1,8 @@
 package at.paulk.data;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -120,6 +123,10 @@ public class Database
 	public boolean changePassword(Officer o, char[] oldPassword, char[] newPassword)
 	{
 		boolean isSuccessful = false;
+		
+		String select = "SELECT oc.password from OfficerCredential oc"
+					+	" WHERE id=?";
+		
 		try
 		{
 			o.changePassword(oldPassword, newPassword);
@@ -227,7 +234,39 @@ public class Database
 				+ " WHERE id=?";
 		createConnection();
 		
+		
+		
+		closeConnection();
+	}
+	
+	public void uploadPicture(Person p, File f) throws Exception
+	{
+		String update = "UPDATE Person"
+				+ " SET picture=?"
+				+ " WHERE id=?";
 
+		String fileExtension = f.getName().substring(f.getName().lastIndexOf('.')+1).toLowerCase();
+		System.out.println(fileExtension);
+		if (!(fileExtension.contentEquals("jpg") && fileExtension.contentEquals("png")))
+		{
+			throw new Exception("Invalid type!");
+		}
+		
+		createConnection();
+
+		
+		try (FileInputStream fis = new FileInputStream(f))
+		{
+			
+			PreparedStatement stmt1 = conn.prepareStatement(update);
+		
+			stmt1.setBinaryStream(1, fis, f.length());
+			stmt1.setInt(2, p.getId());
+		
+			stmt1.executeUpdate();
+		
+			System.out.println("UPLOADED!");
+		}
 		
 		closeConnection();
 	}
