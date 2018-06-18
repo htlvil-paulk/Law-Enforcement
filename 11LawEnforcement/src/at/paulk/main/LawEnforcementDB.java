@@ -13,6 +13,7 @@ public class LawEnforcementDB
 	{
 		try
 		{
+			System.out.println("Starting police database... please wait");
 			JFrame start = new GUIMain();
 			start.setVisible(true);
 		}
