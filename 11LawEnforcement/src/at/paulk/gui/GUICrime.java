@@ -3,17 +3,32 @@ package at.paulk.gui;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+
+import at.paulk.data.Crime;
+import at.paulk.data.Database;
+import at.paulk.data.Officer;
+import at.paulk.data.Suspect;
+import at.paulk.data.MyClob;
+
 import javax.swing.JLabel;
 import javax.swing.JTextField;
 import javax.swing.JFormattedTextField;
 import javax.swing.JTextPane;
 import java.awt.Color;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.sql.Clob;
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+
 import javax.swing.JButton;
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
-public class GUICrime extends JFrame
+public class GUICrime extends JFrame implements ActionListener
 {
 
 	/**
@@ -38,13 +53,19 @@ public class GUICrime extends JFrame
 	private JMenuBar menuBar;
 	private JMenu mnCrime;
 	private JMenuItem mntmSaveChanges;
+	
+	//Non-GUI components
+	private Officer loggedInOfficer;
+	private Suspect mainSuspect;
+	private Database db;
 
 	/**
 	 * Create the frame.
+	 * @throws SQLException 
 	 */
-	public GUICrime()
+	public GUICrime(Officer loggedInOfficer, Suspect s) throws SQLException
 	{
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		setBounds(100, 100, 900, 550);
 		setJMenuBar(getMenuBar_1());
 		contentPane = new JPanel();
@@ -52,6 +73,16 @@ public class GUICrime extends JFrame
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
 		contentPane.add(getPanel());
+		initializeNonGUIComponents(loggedInOfficer, s);
+		
+		setVisible(true);
+	}
+	
+	private void initializeNonGUIComponents(Officer o, Suspect s) throws SQLException
+	{
+		db = Database.createInstance();
+		loggedInOfficer = o;
+		mainSuspect = s;
 	}
 
 	private JPanel getPanel()
@@ -250,7 +281,37 @@ public class GUICrime extends JFrame
 		if (mntmSaveChanges == null)
 		{
 			mntmSaveChanges = new JMenuItem("Save Changes");
+			mntmSaveChanges.addActionListener(this);
 		}
 		return mntmSaveChanges;
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent e)
+	{
+		try
+		{
+			if (e.getSource() == mntmSaveChanges)
+			{
+				db.addCrime(doCreateCrimeFromInput());
+			}
+		}
+		catch (Exception ex)
+		{
+			ex.printStackTrace();
+		}
+		
+	}
+
+	private Crime doCreateCrimeFromInput()
+	{
+		String fileNumber = txtFileNumber.getText();
+		String shortText = txtShortText.getText();
+		LocalDate date = LocalDate.parse(frmtdtxtfldDate.getText(), DateTimeFormatter.ofPattern("dd.MM.uuuu"));
+		LocalTime time = LocalTime.parse(frmtdtxtfldTime.getText(), DateTimeFormatter.ISO_LOCAL_TIME);
+		String crimeScene = txtCrimeScene.getText();
+		MyClob longText = new MyClob(txtpnLongText.getText());
+		
+		return new Crime(fileNumber, shortText, date, time, crimeScene, longText, mainSuspect);
 	}
 }

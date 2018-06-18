@@ -5,6 +5,8 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 
+import at.paulk.misc.OfficerException;
+
 public final class Officer extends Person
 {
 	private int officerId;
@@ -80,7 +82,7 @@ public final class Officer extends Person
 		}
 		else
 		{
-			throw new Exception("the password doesn't match the old password ");
+			throw new OfficerException("the password doesn't match the old password ");
 		}
 	}
 

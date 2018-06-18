@@ -89,7 +89,6 @@ public class GUIMain extends JFrame implements ActionListener
 			loginPanel.add(getTxtUsername());
 			loginPanel.add(getLblPassword());
 			loginPanel.add(getPwdPassword());
-			// loginPanel.setVisible(false);
 		}
 		return loginPanel;
 	}
@@ -248,7 +247,7 @@ public class GUIMain extends JFrame implements ActionListener
 			}
 			else if (e.getSource() == btnAddRecord)
 			{
-				new GUIOffender(currentOfficer);
+				new GUIOffender(currentOfficer, false);
 			}
 			else if (e.getSource() == btnOfficerManagement)
 			{

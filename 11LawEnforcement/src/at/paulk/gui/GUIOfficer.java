@@ -3,8 +3,6 @@ package at.paulk.gui;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.MaskFormatter;
 import javax.swing.JLabel;
@@ -12,14 +10,13 @@ import javax.swing.JLabel;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.sql.Blob;
-import java.sql.SQLException;
 import java.text.ParseException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 import javax.swing.DefaultComboBoxModel;
-import javax.swing.JCheckBox;
 import javax.swing.JTextField;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
@@ -31,13 +28,13 @@ import at.paulk.data.EnumRank;
 import at.paulk.data.Officer;
 import javax.swing.JPasswordField;
 import javax.swing.JButton;
-import javax.swing.JTextPane;
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JList;
 
-public class GUIOfficer extends JFrame implements ActionListener, ListSelectionListener
+public class GUIOfficer extends JFrame implements ActionListener
 {
 	/**
 	 * 
@@ -80,7 +77,7 @@ public class GUIOfficer extends JFrame implements ActionListener, ListSelectionL
 	private JPasswordField pwdNewPassword;
 	private JButton btnChangePassword;
 	private JLabel lblIDCardNumber;
-	private JTextField txtIDCardNumber;
+	private JFormattedTextField frmtdtxtfldIDCardNumber;
 	private JMenuBar menuBar;
 	private JList<Officer> list;
 	private DefaultComboBoxModel<Officer> modOfficer = new DefaultComboBoxModel<>();
@@ -91,7 +88,7 @@ public class GUIOfficer extends JFrame implements ActionListener, ListSelectionL
 	private JMenu mnOfficer;
 	private JMenuItem mntmSaveAsXml;
 	private JMenuItem mntmLoadLoggedinOfficer;
-	private JButton btnUploadNewPicture;
+	private JButton btnSelectNewPicture;
 	private JLabel lblPassword;
 	private JPasswordField pwdPassword;
 
@@ -113,7 +110,7 @@ public class GUIOfficer extends JFrame implements ActionListener, ListSelectionL
 		}
 
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		setBounds(100, 100, 900, 750);
+		setBounds(100, 100, 900, 780);
 		setJMenuBar(getMenuBar_1());
 
 		contentPane = new JPanel();
@@ -124,9 +121,10 @@ public class GUIOfficer extends JFrame implements ActionListener, ListSelectionL
 		contentPane.add(getChangePasswordPanel());
 		contentPane.add(getAdminPanel());
 		setTitle("Officers - " + Settings.POLICE_DEPARTMENT_NAME);
-		setVisible(true);
-
+		
 		initializeNonGUIComponents(officer);
+		
+		setVisible(true);
 	}
 
 	private void initializeNonGUIComponents(Officer officer) throws Exception
@@ -135,7 +133,7 @@ public class GUIOfficer extends JFrame implements ActionListener, ListSelectionL
 		currentOfficer = officer;
 		doLoadOfficer(officer);
 		doFillList();
-		modOfficer.setSelectedItem(currentOfficer);
+		list.setSelectedValue(currentOfficer, true);
 		if (officer.getRank() != EnumRank.GENERAL)
 		{
 			adminPanel.setVisible(false);
@@ -152,7 +150,7 @@ public class GUIOfficer extends JFrame implements ActionListener, ListSelectionL
 			infoPanel.setLayout(null);
 			infoPanel.add(getLblInformation());
 			infoPanel.add(getLblPicture());
-			infoPanel.add(getBtnUploadNewPicture());
+			infoPanel.add(getBtnSelectNewPicture());
 			infoPanel.add(getLblName());
 			infoPanel.add(getTxtName());
 			infoPanel.add(getLblLastName());
@@ -519,6 +517,7 @@ public class GUIOfficer extends JFrame implements ActionListener, ListSelectionL
 		if (btnChangePassword == null)
 		{
 			btnChangePassword = new JButton("Change password");
+			btnChangePassword.addActionListener(this);
 			btnChangePassword.setBounds(466, 58, 200, 34);
 		}
 		return btnChangePassword;
@@ -534,17 +533,22 @@ public class GUIOfficer extends JFrame implements ActionListener, ListSelectionL
 		return lblIDCardNumber;
 	}
 
-	private JTextField getTxtIDCardNumber()
+	private JFormattedTextField getTxtIDCardNumber() throws ParseException
 	{
-		if (txtIDCardNumber == null)
+		if (frmtdtxtfldIDCardNumber == null)
 		{
-			txtIDCardNumber = new JTextField();
-			txtIDCardNumber.setText("ID Card Number");
-			txtIDCardNumber.setColumns(10);
-			txtIDCardNumber.setBounds(704, 69, 149, 34);
+			String mask = "********";
+
+			MaskFormatter mf = new MaskFormatter(mask);
+			mf.setValidCharacters("1234567890");
+
+			frmtdtxtfldIDCardNumber = new JFormattedTextField(mf);
+			frmtdtxtfldIDCardNumber.setText("01234567");
+			frmtdtxtfldIDCardNumber.setColumns(10);
+			frmtdtxtfldIDCardNumber.setBounds(704, 69, 149, 34);
 
 		}
-		return txtIDCardNumber;
+		return frmtdtxtfldIDCardNumber;
 	}
 
 	private JMenuBar getMenuBar_1()
@@ -645,15 +649,15 @@ public class GUIOfficer extends JFrame implements ActionListener, ListSelectionL
 		return mntmLoadLoggedinOfficer;
 	}
 
-	private JButton getBtnUploadNewPicture()
+	private JButton getBtnSelectNewPicture()
 	{
-		if (btnUploadNewPicture == null)
+		if (btnSelectNewPicture == null)
 		{
-			btnUploadNewPicture = new JButton("Upload new picture");
-			btnUploadNewPicture.setBounds(12, 234, 149, 34);
-			btnUploadNewPicture.addActionListener(this);
+			btnSelectNewPicture = new JButton("Select new picture");
+			btnSelectNewPicture.setBounds(12, 234, 149, 34);
+			btnSelectNewPicture.addActionListener(this);
 		}
-		return btnUploadNewPicture;
+		return btnSelectNewPicture;
 	}
 
 	private JLabel getLblPassword()
@@ -679,13 +683,6 @@ public class GUIOfficer extends JFrame implements ActionListener, ListSelectionL
 	}
 
 	@Override
-	public void valueChanged(ListSelectionEvent e)
-	{
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
 	public void actionPerformed(ActionEvent e)
 	{
 		try
@@ -705,33 +702,48 @@ public class GUIOfficer extends JFrame implements ActionListener, ListSelectionL
 			{
 				doEnterViewMode();
 				db.addOfficer(doCreateOfficerFromInput(true));
+				doFillList();
+			}
+			else if (e.getSource() == btnChangePassword)
+			{
+				db.changePassword(selectedOfficer, pwdOldPassword.getPassword(), pwdNewPassword.getPassword());
 			}
 			else if (e.getSource() == btnDeleteOfficer)
 			{
-				doDeleteOfficer((Officer) list.getSelectedValue());
+				Officer toDelete = list.getSelectedValue();
+				if (toDelete == currentOfficer)
+				{
+					throw new NotAuthorizedException("You cannot delete that account in which you are logged in!");
+				}
+				else if (toDelete == null)
+				{
+					throw new Exception("Please select an entry!");
+				}
+				doDeleteOfficer(toDelete);
+			}
+			else if (e.getSource() == btnSelectNewPicture)
+			{
+				File f = doSelectPicture();
+				//TODO Bild in lblPicture einfügen
+			}
+			else if (e.getSource() == btnChangePassword)
+			{
+				db.changePassword(currentOfficer, pwdOldPassword.getPassword(), pwdNewPassword.getPassword());
+				System.out.println("PW changed");
 			}
 			else if (e.getSource() == mntmLoadLoggedinOfficer)
 			{
 				doEnterViewMode();
 				doLoadOfficer(currentOfficer);
 			}
-			else if (e.getSource() == btnUploadNewPicture)
-			{
-				JFileChooser chooser = new JFileChooser();
-				FileNameExtensionFilter filter = new FileNameExtensionFilter("JPG & PNG Images", "jpg", "png");
-				chooser.setFileFilter(filter);
-				int returnVal = chooser.showOpenDialog(this);
-				System.out.println(chooser.getSelectedFile());
-				db.uploadPicture(currentOfficer, chooser.getSelectedFile());
-			}
-			else if (e.getSource() == btnChangePassword)
-			{
-				System.out.println("PW changed");
-				db.changePassword(currentOfficer, pwdOldPassword.getPassword(), pwdNewPassword.getPassword());
-			}
+		}
+		catch (NotAuthorizedException notAuthEx)
+		{
+			JOptionPane.showMessageDialog(this, notAuthEx.getMessage(), "Error - " + Settings.APPLICATION_NAME, JOptionPane.ERROR_MESSAGE);
 		}
 		catch (Exception e2)
 		{
+			JOptionPane.showMessageDialog(this, e2.getMessage(), "Error - " + Settings.APPLICATION_NAME, JOptionPane.ERROR_MESSAGE);
 			e2.printStackTrace();
 		}
 
@@ -745,7 +757,7 @@ public class GUIOfficer extends JFrame implements ActionListener, ListSelectionL
 			txtLastName.setText("");
 			frmtdtxtfldDateOfBirth.setText("01.01.1970");
 			txtBirthplace.setText("");
-			txtIDCardNumber.setText("");
+			frmtdtxtfldIDCardNumber.setText("");
 			txtNationality.setText("");
 			txtAddress.setText("");
 			comboBoxGender.setSelectedItem(EnumGender.MALE);
@@ -759,7 +771,7 @@ public class GUIOfficer extends JFrame implements ActionListener, ListSelectionL
 			txtLastName.setText(o.getLastName());
 			frmtdtxtfldDateOfBirth.setText(o.getDateOfBirthAsString());
 			txtBirthplace.setText(o.getBirthplace());
-			txtIDCardNumber.setText("" + o.getIdCardNumber());
+			frmtdtxtfldIDCardNumber.setText("" + o.getIdCardNumber());
 			txtNationality.setText(o.getNationality());
 			txtAddress.setText(o.getAddress());
 			comboBoxGender.setSelectedItem(o.getGender());
@@ -808,7 +820,7 @@ public class GUIOfficer extends JFrame implements ActionListener, ListSelectionL
 	private void doEnterEditMode()
 	{
 		txtUsername.setEditable(true);
-		txtIDCardNumber.setEditable(true);
+		frmtdtxtfldIDCardNumber.setEditable(true);
 		txtNationality.setEditable(true);
 		frmtdtxtfldDateOfBirth.setEditable(true);
 		txtBirthplace.setEditable(true);
@@ -826,7 +838,7 @@ public class GUIOfficer extends JFrame implements ActionListener, ListSelectionL
 	private void doEnterViewMode()
 	{
 		txtUsername.setEditable(false);
-		txtIDCardNumber.setEditable(false);
+		frmtdtxtfldIDCardNumber.setEditable(false);
 		txtNationality.setEditable(false);
 		frmtdtxtfldDateOfBirth.setEditable(false);
 		txtBirthplace.setEditable(false);
@@ -845,7 +857,7 @@ public class GUIOfficer extends JFrame implements ActionListener, ListSelectionL
 	{
 		Officer o;
 
-		int idCardNumber = Integer.parseInt(txtIDCardNumber.getText());
+		int idCardNumber = Integer.parseInt(frmtdtxtfldIDCardNumber.getText());
 		String nationality = txtNationality.getText();
 		Blob picture = null;
 		String firstName = txtName.getText();
@@ -866,6 +878,16 @@ public class GUIOfficer extends JFrame implements ActionListener, ListSelectionL
 		//TODO dbg
 		System.out.println(String.valueOf(o.getPassword()));
 		return o;
+	}
+	
+	private File doSelectPicture() throws Exception
+	{
+		JFileChooser chooser = new JFileChooser();
+		FileNameExtensionFilter filter = new FileNameExtensionFilter("JPG & PNG Images", "jpg", "png");
+		chooser.setFileFilter(filter);
+		chooser.showOpenDialog(this);
+		System.out.println(chooser.getSelectedFile());
+		return chooser.getSelectedFile();
 	}
 
 }

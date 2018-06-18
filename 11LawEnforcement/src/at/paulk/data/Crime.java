@@ -3,6 +3,7 @@ package at.paulk.data;
 import java.sql.Clob;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 
 public class Crime
 {
@@ -99,5 +100,10 @@ public class Crime
 	private static String createFileNumber()
 	{
 		return "AZ/" + LocalDate.now().getYear() + "-" + LocalDate.now().getDayOfYear();
+	}
+
+	public String getDateAsString()
+	{
+		return date.format(DateTimeFormatter.ofPattern("dd.MM.uuuu"));
 	}
 }

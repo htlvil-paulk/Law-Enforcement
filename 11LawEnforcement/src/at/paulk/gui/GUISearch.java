@@ -15,6 +15,7 @@ import javax.swing.JTextField;
 import javax.swing.JButton;
 
 import at.paulk.data.Officer;
+import javax.swing.JList;
 
 public class GUISearch extends JFrame implements ActionListener
 {
@@ -26,11 +27,9 @@ public class GUISearch extends JFrame implements ActionListener
 	private JPanel contentPane;
 	private JPanel panel;
 	private JLabel lblSearchSuspect;
-	private JLabel lblFileNumber;
 	private JLabel lblName;
 	private JLabel lblLastName;
 	private JLabel lblIdCardNumber;
-	private JTextField txtFileNumber;
 	private JTextField txtName;
 	private JTextField txtLastName;
 	private JTextField txtIDCardNumber;
@@ -39,6 +38,7 @@ public class GUISearch extends JFrame implements ActionListener
 	private JLabel lblHeaderResults;
 
 	private Officer currentOfficer;
+	private JList list;
 	/**
 	 * Create the frame.
 	 * @throws Exception 
@@ -50,7 +50,7 @@ public class GUISearch extends JFrame implements ActionListener
 			throw new Exception("Permission denied: The officer must be specified!");
 		}
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		setBounds(100, 100, 900, 500);
+		setBounds(100, 100, 900, 450);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
@@ -71,14 +71,12 @@ public class GUISearch extends JFrame implements ActionListener
 		if (panel == null)
 		{
 			panel = new JPanel();
-			panel.setBounds(12, 12, 876, 241);
+			panel.setBounds(12, 12, 862, 165);
 			panel.setLayout(null);
 			panel.add(getLblSearchSuspect());
-			panel.add(getLblFileNumber());
 			panel.add(getLblName());
 			panel.add(getLblLastName());
 			panel.add(getLblIdCardNumber());
-			panel.add(getTxtFileNumber());
 			panel.add(getTxtName());
 			panel.add(getTxtLastName());
 			panel.add(getTxtIDCardNumber());
@@ -94,20 +92,9 @@ public class GUISearch extends JFrame implements ActionListener
 			lblSearchSuspect = new JLabel("SEARCH SUSPECT");
 			lblSearchSuspect.setBackground(new Color(0, 255, 255));
 			lblSearchSuspect.setOpaque(true);
-			lblSearchSuspect.setBounds(12, 12, 852, 30);
+			lblSearchSuspect.setBounds(12, 12, 840, 30);
 		}
 		return lblSearchSuspect;
-	}
-
-	private JLabel getLblFileNumber()
-	{
-		if (lblFileNumber == null)
-		{
-			lblFileNumber = new JLabel("File Number");
-			lblFileNumber.setLabelFor(getTxtFileNumber());
-			lblFileNumber.setBounds(22, 54, 200, 30);
-		}
-		return lblFileNumber;
 	}
 
 	private JLabel getLblName()
@@ -116,7 +103,7 @@ public class GUISearch extends JFrame implements ActionListener
 		{
 			lblName = new JLabel("Name:");
 			lblName.setLabelFor(getTxtName());
-			lblName.setBounds(22, 84, 200, 30);
+			lblName.setBounds(12, 53, 200, 30);
 		}
 		return lblName;
 	}
@@ -127,7 +114,7 @@ public class GUISearch extends JFrame implements ActionListener
 		{
 			lblLastName = new JLabel("Last name:");
 			lblLastName.setLabelFor(getTxtLastName());
-			lblLastName.setBounds(22, 113, 200, 30);
+			lblLastName.setBounds(12, 82, 200, 30);
 		}
 		return lblLastName;
 	}
@@ -138,21 +125,9 @@ public class GUISearch extends JFrame implements ActionListener
 		{
 			lblIdCardNumber = new JLabel("ID card number:");
 			lblIdCardNumber.setLabelFor(lblIdCardNumber);
-			lblIdCardNumber.setBounds(22, 140, 200, 30);
+			lblIdCardNumber.setBounds(12, 109, 200, 30);
 		}
 		return lblIdCardNumber;
-	}
-
-	private JTextField getTxtFileNumber()
-	{
-		if (txtFileNumber == null)
-		{
-			txtFileNumber = new JTextField();
-			txtFileNumber.setText("File Number");
-			txtFileNumber.setBounds(225, 54, 200, 30);
-			txtFileNumber.setColumns(10);
-		}
-		return txtFileNumber;
 	}
 
 	private JTextField getTxtName()
@@ -161,7 +136,7 @@ public class GUISearch extends JFrame implements ActionListener
 		{
 			txtName = new JTextField();
 			txtName.setText("Name");
-			txtName.setBounds(225, 84, 200, 30);
+			txtName.setBounds(215, 53, 200, 30);
 			txtName.setColumns(10);
 		}
 		return txtName;
@@ -173,7 +148,7 @@ public class GUISearch extends JFrame implements ActionListener
 		{
 			txtLastName = new JTextField();
 			txtLastName.setText("Last Name");
-			txtLastName.setBounds(225, 113, 200, 30);
+			txtLastName.setBounds(215, 82, 200, 30);
 			txtLastName.setColumns(10);
 		}
 		return txtLastName;
@@ -186,7 +161,7 @@ public class GUISearch extends JFrame implements ActionListener
 			txtIDCardNumber = new JTextField();
 			txtIDCardNumber.setText("Name");
 			txtIDCardNumber.setColumns(10);
-			txtIDCardNumber.setBounds(225, 140, 200, 30);
+			txtIDCardNumber.setBounds(215, 109, 200, 30);
 		}
 		return txtIDCardNumber;
 	}
@@ -196,7 +171,7 @@ public class GUISearch extends JFrame implements ActionListener
 		if (btnSearchForSuspects == null)
 		{
 			btnSearchForSuspects = new JButton("Search For Suspects");
-			btnSearchForSuspects.setBounds(505, 78, 270, 43);
+			btnSearchForSuspects.setBounds(505, 76, 270, 43);
 			btnSearchForSuspects.addActionListener(this);
 		}
 		return btnSearchForSuspects;
@@ -207,9 +182,10 @@ public class GUISearch extends JFrame implements ActionListener
 		if (panel_1 == null)
 		{
 			panel_1 = new JPanel();
-			panel_1.setBounds(12, 265, 876, 194);
+			panel_1.setBounds(12, 188, 862, 194);
 			panel_1.setLayout(null);
 			panel_1.add(getLblHeaderResults());
+			panel_1.add(getList());
 		}
 		return panel_1;
 	}
@@ -221,7 +197,7 @@ public class GUISearch extends JFrame implements ActionListener
 			lblHeaderResults = new JLabel("RESULTS");
 			lblHeaderResults.setOpaque(true);
 			lblHeaderResults.setBackground(Settings.SECONDARY_COLOR);
-			lblHeaderResults.setBounds(12, 12, 852, 30);
+			lblHeaderResults.setBounds(12, 12, 840, 30);
 		}
 		return lblHeaderResults;
 	}
@@ -245,5 +221,12 @@ public class GUISearch extends JFrame implements ActionListener
 			e2.printStackTrace();
 		}
 		
+	}
+	private JList getList() {
+		if (list == null) {
+			list = new JList();
+			list.setBounds(12, 48, 840, 119);
+		}
+		return list;
 	}
 }
