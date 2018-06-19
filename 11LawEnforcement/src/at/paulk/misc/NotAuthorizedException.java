@@ -1,4 +1,4 @@
-package at.paulk.gui;
+package at.paulk.misc;
 
 public class NotAuthorizedException extends Exception
 {

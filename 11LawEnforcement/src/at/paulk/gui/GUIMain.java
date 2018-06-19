@@ -22,6 +22,7 @@ import javax.swing.JButton;
 import at.paulk.data.Database;
 import at.paulk.data.EnumRank;
 import at.paulk.data.Officer;
+import javax.swing.SwingConstants;
 
 public class GUIMain extends JFrame implements ActionListener
 {
@@ -56,7 +57,7 @@ public class GUIMain extends JFrame implements ActionListener
 	public GUIMain() throws SQLException
 	{
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 900, 540);
+		setBounds(100, 100, 900, 575);
 		setTitle(Settings.APPLICATION_NAME);
 		contentPane = new JPanel();
 		contentPane.setBackground(Settings.PRIMARY_COLOR);
@@ -83,7 +84,7 @@ public class GUIMain extends JFrame implements ActionListener
 		if (loginPanel == null)
 		{
 			loginPanel = new JPanel();
-			loginPanel.setBounds(12, 103, 876, 100);
+			loginPanel.setBounds(12, 103, 862, 100);
 			loginPanel.setLayout(new GridLayout(2, 2, 0, 0));
 			loginPanel.add(getLblUsername());
 			loginPanel.add(getTxtUsername());
@@ -139,7 +140,7 @@ public class GUIMain extends JFrame implements ActionListener
 		if (btnLogin == null)
 		{
 			btnLogin = new JButton("Login");
-			btnLogin.setBounds(455, 230, 433, 25);
+			btnLogin.setBounds(455, 230, 419, 25);
 			btnLogin.addActionListener(this);
 		}
 		return btnLogin;
@@ -152,7 +153,7 @@ public class GUIMain extends JFrame implements ActionListener
 			lblBanner = new JLabel(Settings.POLICE_DEPARTMENT_NAME);
 			lblBanner.setBackground(Settings.SECONDARY_COLOR); //SecondaryColor
 			lblBanner.setOpaque(true);
-			lblBanner.setBounds(12, 30, 876, 61);
+			lblBanner.setBounds(12, 30, 862, 61);
 		}
 		return lblBanner;
 	}
@@ -162,7 +163,7 @@ public class GUIMain extends JFrame implements ActionListener
 		if (mainPanel == null)
 		{
 			mainPanel = new JPanel();
-			mainPanel.setBounds(12, 215, 876, 257);
+			mainPanel.setBounds(12, 215, 862, 257);
 			mainPanel.setLayout(new GridLayout(4, 2, 0, 0));
 			mainPanel.add(getBtnSearch());
 			mainPanel.add(getBtnAddRecord());
@@ -230,7 +231,9 @@ public class GUIMain extends JFrame implements ActionListener
 			label = new JLabel(LocalDate.now().format(
 					DateTimeFormatter.ofPattern("dd.MM.uuuu"))
 					+ " - " + LocalTime.now());
-			label.setBounds(448, 513, 440, 15);
+			label.setHorizontalAlignment(SwingConstants.RIGHT);
+			label.setHorizontalTextPosition(SwingConstants.CENTER);
+			label.setBounds(448, 513, 426, 15);
 		}
 		return label;
 	}
@@ -247,7 +250,7 @@ public class GUIMain extends JFrame implements ActionListener
 			}
 			else if (e.getSource() == btnAddRecord)
 			{
-				new GUIOffender(currentOfficer, false);
+				new GUIOffender(currentOfficer);
 			}
 			else if (e.getSource() == btnOfficerManagement)
 			{

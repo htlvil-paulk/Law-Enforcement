@@ -83,6 +83,7 @@ public class GUICrime extends JFrame implements ActionListener
 		db = Database.createInstance();
 		loggedInOfficer = o;
 		mainSuspect = s;
+		txtFileNumber.setText(Crime.createFileNumber(s));
 	}
 
 	private JPanel getPanel()
@@ -159,7 +160,8 @@ public class GUICrime extends JFrame implements ActionListener
 		if (txtFileNumber == null)
 		{
 			txtFileNumber = new JTextField();
-			txtFileNumber.setText("File Number");
+			txtFileNumber.setEnabled(false);
+			txtFileNumber.setText("AZ-????-??");
 			txtFileNumber.setBounds(240, 52, 200, 20);
 			txtFileNumber.setColumns(10);
 		}
@@ -305,13 +307,12 @@ public class GUICrime extends JFrame implements ActionListener
 
 	private Crime doCreateCrimeFromInput()
 	{
-		String fileNumber = txtFileNumber.getText();
 		String shortText = txtShortText.getText();
 		LocalDate date = LocalDate.parse(frmtdtxtfldDate.getText(), DateTimeFormatter.ofPattern("dd.MM.uuuu"));
 		LocalTime time = LocalTime.parse(frmtdtxtfldTime.getText(), DateTimeFormatter.ISO_LOCAL_TIME);
 		String crimeScene = txtCrimeScene.getText();
 		MyClob longText = new MyClob(txtpnLongText.getText());
 		
-		return new Crime(fileNumber, shortText, date, time, crimeScene, longText, mainSuspect);
+		return new Crime(shortText, date, time, crimeScene, longText, mainSuspect);
 	}
 }

@@ -2,6 +2,7 @@ package at.paulk.data;
 
 import java.sql.Clob;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
@@ -9,29 +10,32 @@ public class Crime
 {
 	private String fileNumber;
 	private String shortText;
-	private LocalDate date;
-	private LocalTime time;
+	private LocalDateTime crimeTime;
 	private String crimeScene;
 	private Clob longText;
 	private Suspect mainSuspect;
 
-	public Crime(String fileNumber, String shortText, LocalDate date,
-			LocalTime time, String crimeScene, Clob longText,
+	public Crime(String fileNumber, String shortText, LocalDateTime crimeTime, String crimeScene, Clob longText,
 			Suspect mainSuspect)
 	{
 		setFileNumber(fileNumber);
 		setShortText(shortText);
-		setDate(date);
-		setTime(time);
+		setCrimeTime(crimeTime);
 		setCrimeScene(crimeScene);
 		setMainSuspect(mainSuspect);
 		setLongText(longText);
 	}
 
+	public Crime(String shortText, LocalDateTime crimeTime,
+			String crimeScene, Clob longText, Suspect mainSuspect)
+	{
+		this(createFileNumber(mainSuspect) ,shortText, crimeTime, crimeScene, longText, mainSuspect);
+	}
+	
 	public Crime(String shortText, LocalDate date, LocalTime time,
 			String crimeScene, Clob longText, Suspect mainSuspect)
 	{
-		this(createFileNumber() ,shortText, date, time, crimeScene, longText, mainSuspect);
+		this(createFileNumber(mainSuspect) ,shortText, time.atDate(date), crimeScene, longText, mainSuspect);
 	}
 
 	public String getFileNumber()
@@ -52,24 +56,6 @@ public class Crime
 		this.shortText = shortText;
 	}
 
-	public LocalDate getDate()
-	{
-		return date;
-	}
-	public void setDate(LocalDate date)
-	{
-		this.date = date;
-	}
-
-	public LocalTime getTime()
-	{
-		return time;
-	}
-	public void setTime(LocalTime time)
-	{
-		this.time = time;
-	}
-
 	public String getCrimeScene()
 	{
 		return crimeScene;
@@ -77,6 +63,21 @@ public class Crime
 	public void setCrimeScene(String crimeScene)
 	{
 		this.crimeScene = crimeScene;
+	}
+
+	public LocalDateTime getCrimeTime()
+	{
+		return crimeTime;
+	}
+	
+	public String getCrimeTimeAsString()
+	{
+		return crimeTime.format(DateTimeFormatter.ofPattern("dd.MM.uuuu")) + crimeTime.format(DateTimeFormatter.ISO_LOCAL_TIME);
+	}
+
+	public void setCrimeTime(LocalDateTime crimeTime)
+	{
+		this.crimeTime = crimeTime;
 	}
 
 	public Clob getLongText()
@@ -97,13 +98,8 @@ public class Crime
 		this.mainSuspect = mainSuspect;
 	}
 
-	private static String createFileNumber()
+	public static String createFileNumber(Suspect s)
 	{
-		return "AZ/" + LocalDate.now().getYear() + "-" + LocalDate.now().getDayOfYear();
-	}
-
-	public String getDateAsString()
-	{
-		return date.format(DateTimeFormatter.ofPattern("dd.MM.uuuu"));
+		return "AZ/" + LocalDate.now().getYear() + "-" + LocalDate.now().getDayOfYear() + LocalTime.now().toSecondOfDay()/60 + "-" + s.getLastName().replace(' ', '_') + s.getId();
 	}
 }

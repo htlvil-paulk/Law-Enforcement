@@ -1,5 +1,8 @@
 package at.paulk.data;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.sql.Blob;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -80,6 +83,32 @@ public abstract class Person
 	{
 		return picture;
 	}
+
+//	public void setPicture(File picture) throws IOException
+//	{
+//		byte[] fileContent = new byte[(int) picture.length()];
+//		FileInputStream inputStream = null;
+//		try
+//		{
+//			// create an input stream pointing to the file
+//			inputStream = new FileInputStream(picture);
+//			// read the contents of file into byte array
+//			inputStream.read(fileContent);
+//		}
+//		catch (IOException e)
+//		{
+//			throw new IOException("Unable to convert file to byte array. " + e.getMessage());
+//		}
+//		finally
+//		{
+//			// close input stream
+//			if (inputStream != null)
+//			{
+//				inputStream.close();
+//			}
+//		}
+//		this.picture = fileContent;
+//	}
 
 	public void setPicture(Blob picture)
 	{
@@ -164,5 +193,40 @@ public abstract class Person
 	public void setNationality(String nationality)
 	{
 		this.nationality = nationality;
+	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + id;
+		result = prime * result + idCardNumber;
+		result = prime * result + ((nationality == null) ? 0 : nationality.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Person other = (Person) obj;
+		if (id != other.id)
+			return false;
+		if (idCardNumber != other.idCardNumber)
+			return false;
+		if (nationality == null)
+		{
+			if (other.nationality != null)
+				return false;
+		}
+		else if (!nationality.equals(other.nationality))
+			return false;
+		return true;
 	}
 }

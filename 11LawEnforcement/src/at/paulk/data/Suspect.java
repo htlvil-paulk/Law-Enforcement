@@ -85,6 +85,11 @@ public class Suspect extends Person
 	{
 		return flags.contains(f);
 	}
+	
+	public boolean hasFlag(String flag)
+	{
+		return hasFlag(EnumFlag.valueOf(flag));
+	}
 
 	@Override
 	public String toString()
@@ -97,5 +102,13 @@ public class Suspect extends Person
 				+ getClass() + ", hashCode()=" + hashCode() + ", toString()=" + super.toString() + "]";
 	}
 
+	public void addFlag(String flag)
+	{
+		EnumFlag f = EnumFlag.valueOf(flag);
+		if(f != null)
+		{
+			addFlag(f);
+		}
+	}
 	
 }

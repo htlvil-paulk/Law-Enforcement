@@ -19,7 +19,7 @@ public class LawEnforcementDB
 		}
 		catch (SQLException e)
 		{
-	        JOptionPane.showMessageDialog(null, "Error: Connection to the database cannot be established!", "Initialization failed - " + at.paulk.gui.Settings.APPLICATION_NAME, JOptionPane.ERROR_MESSAGE);
+	        JOptionPane.showMessageDialog(null, "Error: Connection to the database cannot be established!\nAre you connected to the internet?", "Initialization failed - " + at.paulk.gui.Settings.APPLICATION_NAME, JOptionPane.ERROR_MESSAGE);
 			e.printStackTrace();
 		}
 		catch (Exception e)

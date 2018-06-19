@@ -20,6 +20,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.ImageIcon;
 import javax.swing.JCheckBox;
 import javax.swing.JTextField;
 import javax.swing.JComboBox;
@@ -72,7 +73,7 @@ public class GUIOffender extends JFrame implements ActionListener
 	private JTextField txtAddress;
 
 	private JPanel flagPanel;
-	private JLabel lblFlags;
+	private JLabel lblHeaderFlags;
 	private JCheckBox chckbxIsViolent;
 	private JCheckBox chckbxHasADrugProblem;
 	private JCheckBox chckbxIsFugitive;
@@ -95,20 +96,20 @@ public class GUIOffender extends JFrame implements ActionListener
 
 	private JPanel committedCrimesPanel;
 	private JLabel lblCommittedCrimes;
+	private JButton btnSelectPicture;
+	private JButton btnAddCrime;
 
 	// Non-GUI Components
 	private Database db;
 	private Officer currentOfficer;
-	private JButton btnSelectPicture;
-	private JButton btnAddCrime;
-	private JButton btnDeleteSuspect;
+	private Suspect currentSuspect;
 
 	/**
-	 * Create the frame.
+	 * Create the frame. if the Suspect is null, the suspect creation view will be opened
 	 * 
 	 * @throws Exception
 	 */
-	public GUIOffender(Officer officer, boolean isViewMode) throws Exception
+	public GUIOffender(Officer officer, Suspect s) throws Exception
 	{
 		if (officer == null)
 		{
@@ -127,22 +128,34 @@ public class GUIOffender extends JFrame implements ActionListener
 		contentPane.add(getFlagPanel());
 		contentPane.add(getCommittedCrimesPanel());
 		contentPane.add(getButtonPanel());
-		if (isViewMode)
+		initializeNonGUIComponents(officer, s);
+		
+		boolean isSuspectDefined = currentSuspect != null;
+		if (!isSuspectDefined)
 		{
-
+			doEnterMode(true);
 		}
 		else
 		{
-
+			doEnterMode(false);
+			doLoadSuspect(currentSuspect);
 		}
-		initializeNonGUIComponents(officer);
 		setVisible(true);
 	}
 
-	private void initializeNonGUIComponents(Officer officer) throws SQLException
+	/**
+	 * @wbp.parser.constructor
+	 */
+	public GUIOffender(Officer officer) throws Exception
+	{
+		this(officer, null);
+	}
+	
+	private void initializeNonGUIComponents(Officer officer, Suspect s) throws SQLException
 	{
 		currentOfficer = officer;
 		db = Database.createInstance();
+		currentSuspect = s;
 	}
 
 	private JPanel getInfoPanel() throws ParseException
@@ -389,7 +402,7 @@ public class GUIOffender extends JFrame implements ActionListener
 			flagPanel = new JPanel();
 			flagPanel.setBounds(12, 371, 876, 195);
 			flagPanel.setLayout(null);
-			flagPanel.add(getLblFlags());
+			flagPanel.add(getLblHeaderFlags());
 			flagPanel.add(getChckbxIsViolent());
 			flagPanel.add(getChckbxHasADrugProblem());
 			flagPanel.add(getChckbxIsFugitive());
@@ -402,16 +415,16 @@ public class GUIOffender extends JFrame implements ActionListener
 		return flagPanel;
 	}
 
-	private JLabel getLblFlags()
+	private JLabel getLblHeaderFlags()
 	{
-		if (lblFlags == null)
+		if (lblHeaderFlags == null)
 		{
-			lblFlags = new JLabel("FLAGS");
-			lblFlags.setOpaque(true);
-			lblFlags.setBackground(Settings.SECONDARY_COLOR);
-			lblFlags.setBounds(12, 12, 852, 30);
+			lblHeaderFlags = new JLabel("FLAGS");
+			lblHeaderFlags.setOpaque(true);
+			lblHeaderFlags.setBackground(Settings.SECONDARY_COLOR);
+			lblHeaderFlags.setBounds(12, 12, 852, 30);
 		}
-		return lblFlags;
+		return lblHeaderFlags;
 	}
 
 	private JCheckBox getChckbxIsViolent()
@@ -599,7 +612,6 @@ public class GUIOffender extends JFrame implements ActionListener
 			buttonPanel.setLayout(new GridLayout(0, 5, 0, 0));
 			buttonPanel.add(getBtnSaveSuspect());
 			buttonPanel.add(getBtnAddCrime());
-			buttonPanel.add(getBtnDeleteSuspect());
 		}
 		return buttonPanel;
 	}
@@ -635,7 +647,7 @@ public class GUIOffender extends JFrame implements ActionListener
 		}
 		return btnSelectPicture;
 	}
-	
+
 	private JButton getBtnAddCrime()
 	{
 		if (btnAddCrime == null)
@@ -644,16 +656,6 @@ public class GUIOffender extends JFrame implements ActionListener
 			btnAddCrime.addActionListener(this);
 		}
 		return btnAddCrime;
-	}
-
-	private JButton getBtnDeleteSuspect()
-	{
-		if (btnDeleteSuspect == null)
-		{
-			btnDeleteSuspect = new JButton("Delete Suspect");
-			btnDeleteSuspect.addActionListener(this);
-		}
-		return btnDeleteSuspect;
 	}
 
 	@Override
@@ -672,7 +674,9 @@ public class GUIOffender extends JFrame implements ActionListener
 
 				if (f != null)
 				{
-					// TODO Bild im Label setzen
+					// TODO Bild im Label setzen (aber richtig)
+					ImageIcon img = new ImageIcon(f.getPath());
+					lblPicture.setIcon(img);
 				}
 			}
 			else if (e.getSource() == btnAddCrime)
@@ -720,49 +724,80 @@ public class GUIOffender extends JFrame implements ActionListener
 			if (c instanceof JCheckBox)
 			{
 				JCheckBox cbx = (JCheckBox) c;
-				if (cbx.isSelected() && EnumFlag.valueOf(c.getName()) != null)
+				if (cbx.isSelected() && EnumFlag.valueOf(cbx.getName()) != null)
 				{
-					s.addFlag(EnumFlag.valueOf(c.getName()));
+					s.addFlag(EnumFlag.valueOf(cbx.getName()));
 				}
 			}
 		}
-
 		return s;
 	}
 
 	private void doFillCrimeList(Suspect s) throws SQLException
 	{
 		modCrimes.removeAllElements();
-		for (Crime c : db.selectCrimes(s))
+		if (s != null && s.getId() != -99)
 		{
-			modCrimes.addElement(c);
+			for (Crime c : db.selectCrimes(s))
+			{
+				modCrimes.addElement(c);
+			}
 		}
 	}
 
 	private File doSelectPicture() throws Exception
 	{
 		JFileChooser chooser = new JFileChooser();
-		FileNameExtensionFilter filter = new FileNameExtensionFilter("JPG & PNG Images", "jpg", "png");
+		FileNameExtensionFilter filter = new FileNameExtensionFilter("JPG or PNG Image", "jpg", "png");
 		chooser.setFileFilter(filter);
 		chooser.showOpenDialog(this);
 		System.out.println(chooser.getSelectedFile());
 		return chooser.getSelectedFile();
 	}
-	
-	private void doEnterViewMode()
+
+	private void doEnterMode(boolean isEditMode)
 	{
-		for (Component c : infoPanel.getComponents())
+		frmtdtxtfldIDCardNumber.setEditable(isEditMode);
+		txtNationality.setEditable(isEditMode);
+		txtName.setEditable(isEditMode);
+		txtLastName.setEditable(isEditMode);
+		txtAddress.setEditable(isEditMode);
+		frmtdtxtfldDateOfBirth.setEditable(isEditMode);
+		txtBirthplace.setEditable(isEditMode);
+		comboBoxGender.setEnabled(isEditMode);
+		for (Component c : flagPanel.getComponents())
 		{
-			c.setEnabled(false);
+			if (c instanceof JCheckBox)
+			{
+				c.setEnabled(isEditMode);
+			}
+		}
+		btnSaveSuspect.setVisible(isEditMode);
+		btnAddCrime.setVisible(!isEditMode);
+	}
+	
+	private void doLoadSuspect(Suspect s)
+	{
+		frmtdtxtfldIDCardNumber.setText(("" + s.getIdCardNumber()));
+		txtNationality.setText(s.getNationality());
+		txtName.setText(s.getFirstName());
+		txtLastName.setText(s.getLastName());
+		txtAddress.setText(s.getAddress());
+		frmtdtxtfldDateOfBirth.setText(s.getDateOfBirthAsString());
+		txtBirthplace.setText(s.getBirthplace());
+		comboBoxGender.setSelectedItem(s.getGender());
+		
+		for (Component c : flagPanel.getComponents())
+		{
+			if (c instanceof JCheckBox)
+			{
+				if(s.hasFlag(c.getName()))
+				{
+					c.setEnabled(true);
+				}
+			}
 		}
 		
 	}
-	
-	private void doEnterAddMode()
-	{
-		for (Component c : infoPanel.getComponents())
-		{
-			c.setEnabled(true);
-		}
-	}
+
 }

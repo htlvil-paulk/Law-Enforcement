@@ -2,7 +2,6 @@ package at.paulk.data;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.Connection;
@@ -10,8 +9,8 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 
 import at.paulk.misc.OfficerException;
@@ -242,9 +241,24 @@ public class Database
 	public void updateOfficer(Officer o) throws SQLException
 	{
 		String update = "UPDATE Person"
-				+ " SET idCardNumber=?, nationality=?, name=?, lastName=?, picture=?, dateOfBirth=TO_DATE(?,'DD.MM.YYYY'), birthplace=?, gender=?, address=?"
+				+ " SET idCardNumber=?, citizenship=?, name=?, lastName=?, picture=?, dateOfBirth=TO_DATE(?,'DD.MM.YYYY'), birthplace=?, gender=?, address=?"
 				+ " WHERE id=?";
 		createConnection();
+		
+		PreparedStatement stmt = conn.prepareStatement(update);
+		
+		stmt.setInt(1, o.getIdCardNumber());
+		stmt.setString(2, o.getNationality());
+		stmt.setString(3, o.getFirstName());
+		stmt.setString(4, o.getLastName());
+		stmt.setBlob(5, o.getPicture());
+		stmt.setString(6, o.getDateOfBirthAsString());
+		stmt.setString(7, o.getBirthplace());
+		stmt.setString(8, o.getGender().toString());
+		stmt.setString(9, o.getAddress());
+		stmt.setInt(10, o.getId());
+		
+		stmt.executeUpdate();
 
 		closeConnection();
 	}
@@ -308,13 +322,14 @@ public class Database
 		closeConnection();
 	}
 
-	public void addSuspect(Suspect suspect) throws SQLException
+	public void addSuspect(Suspect suspect) throws Exception
 	{
-		String insert = "INSERT INTO Person VALUES(sqPerson.CURRVAL, ?, ?, ?, ?, ?, TO_DATE(?,'DD.MM.YYYY'), ?, ?, ?, 'SUSPECT', ?,  NULL)";
-
+		String insertPerson = "INSERT INTO Person VALUES(sqPerson.NEXTVAL, ?, ?, ?, ?, ?, TO_DATE(?,'DD.MM.YYYY HH24:MI:SS'), ?, ?, ?, 'SUSPECT', ?,  NULL)";
+		String insertFlags = "INSERT INTO HasRemark VALUES (sqPerson.CURRVAL, ?)";
+		
 		createConnection();
 
-		PreparedStatement stmt = conn.prepareStatement(insert);
+		PreparedStatement stmt = conn.prepareStatement(insertPerson);
 
 		stmt.setInt(1, suspect.getIdCardNumber());
 		stmt.setString(2, suspect.getNationality());
@@ -326,10 +341,83 @@ public class Database
 		stmt.setString(8, suspect.getGender().toString());
 		stmt.setString(9, suspect.getAddress());
 
-		stmt.executeUpdate();
+		if ("".equals(""))
+		{
+			throw new Exception("not implemented");
+		}
+		
+		int returnValue = stmt.executeUpdate();
 
+		
+		//Nummerierung von 1-8 für jedes Vergehen.
+		
+		for(int i = 0; i <= 8; i++)
+		{
+			
+		}
 		closeConnection();
+
 	}
+
+	public ArrayList<Suspect> searchSuspects(String name, String lastName, int idCardNumber) throws SQLException
+	{
+		ArrayList<Suspect> results = new ArrayList<>();
+		
+		String search = "SELECT p.id, p.idcardnumber, p.citizenship, p.picture, p.name, p.lastname, p.dateofbirth, p.birthplace, p.gender, p.address, p.description FROM Person p"
+				+ " WHERE (idCardNumber=? OR name LIKE ? OR lastName LIKE ?) AND p.flagPerson LIKE 'SUSPECT'";
+		createConnection();
+		
+		PreparedStatement stmt = conn.prepareStatement(search);
+		
+		stmt.setInt(1, idCardNumber);
+		stmt.setString(2, name);
+		stmt.setString(3, lastName);
+		
+		ResultSet rs = stmt.executeQuery();
+		
+		while (rs.next())
+		{
+			int id = rs.getInt("id");
+			int idCardNr = rs.getInt("idcardnumber");
+			String citizenship = rs.getString("citizenship");
+			Blob picture = rs.getBlob("picture");
+			String fullFirstName = rs.getString("name");
+			String fullLastName = rs.getString("lastName");
+			LocalDate dateOfBirth = rs.getDate("dateOfBirth").toLocalDate();
+			String birthPlace = rs.getString("birthplace");
+			EnumGender gender = EnumGender.valueOf(rs.getString("gender"));
+			String address = rs.getString("address");
+			Clob description = rs.getClob("description");
+			
+			Suspect newSuspect = new Suspect(id, idCardNr, citizenship, picture, fullFirstName, fullLastName, gender, birthPlace, dateOfBirth, address, description);
+			selectFlags(newSuspect);
+			
+			results.add(newSuspect);
+		}
+		
+		closeConnection();
+		
+		return results;
+	}
+	
+	private void selectFlags(Suspect s) throws SQLException
+	{
+		String queryFlags = "SELECT r.description FROM HasRemark hr" + 
+				" INNER JOIN Remark r ON hr.idRemark = r.id" + 
+				" WHERE idPerson=?";
+		PreparedStatement stmt2 = conn.prepareStatement(queryFlags);
+		
+		stmt2.setInt(1, s.getId());
+		
+		ResultSet rsFlags = stmt2.executeQuery();
+		
+		while (rsFlags.next())
+		{
+			s.addFlag(rsFlags.getString("description"));
+		}
+	}
+	
+	
 
 	public ArrayList<Crime> selectCrimes(Suspect s) throws SQLException
 	{
@@ -350,11 +438,11 @@ public class Database
 		{
 			String fileNumber = rs.getString("fileNumber");
 			String shortText = rs.getString("shortText");
-			LocalDate dateTime = rs.getDate("dateTime").toLocalDate();
+			//LocalDateTime dateTime = rs.getDate("dateTime").toLocalDate();
 			String crimeScene = rs.getString("crimeScene");
 			Clob longText = rs.getClob("longText");
 
-			results.add(new Crime(fileNumber, dateTime, null, crimeScene, longText, s));
+			//results.add(new Crime(fileNumber, shortText, dateTime, crimeScene, longText, s));
 			// LocalDate1, LocalDate2
 		}
 		return results;
@@ -362,7 +450,7 @@ public class Database
 
 	public void addCrime(Crime c) throws SQLException
 	{
-		String insert = "INSERT INTO Crime VALUES(?, ?, ?, TO_DATE(?, 'DD.MM.YYYY'), ?, ?)";
+		String insert = "INSERT INTO Crime VALUES(?, ?, ?, TO_DATE(?, 'DD.MM.YYYY HH24:MI:SS'), ?, ?)";
 		
 		createConnection();
 		
@@ -371,17 +459,11 @@ public class Database
 		stmt.setString(1, c.getFileNumber());
 		stmt.setInt(2, c.getMainSuspect().getId());
 		stmt.setString(3, c.getShortText());
-		stmt.setString(4, c.getDateAsString());
+		stmt.setString(4, c.getCrimeTimeAsString());
 		stmt.setClob(5, c.getLongText());
 		
 		stmt.executeUpdate();
 		
 		closeConnection();
 	}
-
-	public void searchSuspects(int id, String name, String lastName, int idCardNumber)
-	{
-		
-	}
-	
 }

@@ -4,6 +4,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.table.TableModel;
 import javax.swing.text.MaskFormatter;
 import javax.swing.JLabel;
 
@@ -26,6 +27,9 @@ import at.paulk.data.Database;
 import at.paulk.data.EnumGender;
 import at.paulk.data.EnumRank;
 import at.paulk.data.Officer;
+import at.paulk.data.TableModelOfficers;
+import at.paulk.misc.NotAuthorizedException;
+
 import javax.swing.JPasswordField;
 import javax.swing.JButton;
 import javax.swing.JMenuBar;
@@ -33,6 +37,8 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JList;
+import javax.swing.JTable;
+import javax.swing.JScrollPane;
 
 public class GUIOfficer extends JFrame implements ActionListener
 {
@@ -79,7 +85,6 @@ public class GUIOfficer extends JFrame implements ActionListener
 	private JLabel lblIDCardNumber;
 	private JFormattedTextField frmtdtxtfldIDCardNumber;
 	private JMenuBar menuBar;
-	private JList<Officer> list;
 	private DefaultComboBoxModel<Officer> modOfficer = new DefaultComboBoxModel<>();
 	private JButton btnDeleteOfficer;
 	private JButton btnLoadOfficer;
@@ -96,6 +101,10 @@ public class GUIOfficer extends JFrame implements ActionListener
 	private Database db;
 	private Officer currentOfficer;
 	private Officer selectedOfficer;
+	private JTable table;
+	private JScrollPane scrollPane;
+
+	private TableModelOfficers modOfficers = new TableModelOfficers();
 
 	/**
 	 * Create the frame.
@@ -110,7 +119,7 @@ public class GUIOfficer extends JFrame implements ActionListener
 		}
 
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		setBounds(100, 100, 900, 780);
+		setBounds(100, 100, 900, 840);
 		setJMenuBar(getMenuBar_1());
 
 		contentPane = new JPanel();
@@ -121,9 +130,9 @@ public class GUIOfficer extends JFrame implements ActionListener
 		contentPane.add(getChangePasswordPanel());
 		contentPane.add(getAdminPanel());
 		setTitle("Officers - " + Settings.POLICE_DEPARTMENT_NAME);
-		
+
 		initializeNonGUIComponents(officer);
-		
+
 		setVisible(true);
 	}
 
@@ -133,12 +142,11 @@ public class GUIOfficer extends JFrame implements ActionListener
 		currentOfficer = officer;
 		doLoadOfficer(officer);
 		doFillList();
-		list.setSelectedValue(currentOfficer, true);
 		if (officer.getRank() != EnumRank.GENERAL)
 		{
 			adminPanel.setVisible(false);
 		}
-		doEnterViewMode();
+		doEnterMode(false);
 	}
 
 	private JPanel getInfoPanel() throws ParseException
@@ -146,7 +154,7 @@ public class GUIOfficer extends JFrame implements ActionListener
 		if (infoPanel == null)
 		{
 			infoPanel = new JPanel();
-			infoPanel.setBounds(12, 12, 878, 314);
+			infoPanel.setBounds(12, 11, 862, 314);
 			infoPanel.setLayout(null);
 			infoPanel.add(getLblInformation());
 			infoPanel.add(getLblPicture());
@@ -185,7 +193,7 @@ public class GUIOfficer extends JFrame implements ActionListener
 			lblInformation = new JLabel("INFORMATION");
 			lblInformation.setOpaque(true);
 			lblInformation.setBackground(Settings.SECONDARY_COLOR);
-			lblInformation.setBounds(12, 12, 854, 34);
+			lblInformation.setBounds(12, 13, 841, 34);
 		}
 		return lblInformation;
 	}
@@ -418,13 +426,14 @@ public class GUIOfficer extends JFrame implements ActionListener
 		if (adminPanel == null)
 		{
 			adminPanel = new JPanel();
-			adminPanel.setBounds(12, 529, 878, 179);
+			adminPanel.setBounds(12, 529, 862, 300);
 			adminPanel.setLayout(null);
 			adminPanel.add(getLblHeaderAdmin());
-			adminPanel.add(getList());
 			adminPanel.add(getBtnDeleteOfficer());
 			adminPanel.add(getBtnLoadOfficer());
 			adminPanel.add(getBtnAddOfficer());
+			adminPanel.add(getTable());
+			adminPanel.add(getScrollPane());
 		}
 		return adminPanel;
 	}
@@ -436,7 +445,7 @@ public class GUIOfficer extends JFrame implements ActionListener
 			lblHeaderAdmin = new JLabel("ADMIN-PANEL");
 			lblHeaderAdmin.setOpaque(true);
 			lblHeaderAdmin.setBackground(Settings.SECONDARY_COLOR);
-			lblHeaderAdmin.setBounds(12, 12, 854, 34);
+			lblHeaderAdmin.setBounds(12, 12, 840, 34);
 		}
 		return lblHeaderAdmin;
 	}
@@ -446,7 +455,7 @@ public class GUIOfficer extends JFrame implements ActionListener
 		if (changePasswordPanel == null)
 		{
 			changePasswordPanel = new JPanel();
-			changePasswordPanel.setBounds(14, 338, 876, 179);
+			changePasswordPanel.setBounds(14, 338, 860, 179);
 			changePasswordPanel.setLayout(null);
 			changePasswordPanel.add(getLblHeaderChangePassword());
 			changePasswordPanel.add(getLblOldPassword());
@@ -465,7 +474,7 @@ public class GUIOfficer extends JFrame implements ActionListener
 			lblHeaderChangePassword = new JLabel("CHANGE PASSWORD");
 			lblHeaderChangePassword.setOpaque(true);
 			lblHeaderChangePassword.setBackground(Settings.SECONDARY_COLOR);
-			lblHeaderChangePassword.setBounds(12, 12, 854, 34);
+			lblHeaderChangePassword.setBounds(12, 12, 838, 34);
 		}
 		return lblHeaderChangePassword;
 	}
@@ -562,23 +571,12 @@ public class GUIOfficer extends JFrame implements ActionListener
 		return menuBar;
 	}
 
-	private JList<Officer> getList()
-	{
-		if (list == null)
-		{
-			list = new JList<Officer>();
-			list.setModel(modOfficer);
-			list.setBounds(12, 58, 854, 80);
-		}
-		return list;
-	}
-
 	private JButton getBtnDeleteOfficer()
 	{
 		if (btnDeleteOfficer == null)
 		{
 			btnDeleteOfficer = new JButton("Delete Officer");
-			btnDeleteOfficer.setBounds(158, 142, 134, 25);
+			btnDeleteOfficer.setBounds(156, 208, 134, 25);
 			btnDeleteOfficer.addActionListener(this);
 		}
 		return btnDeleteOfficer;
@@ -589,7 +587,7 @@ public class GUIOfficer extends JFrame implements ActionListener
 		if (btnLoadOfficer == null)
 		{
 			btnLoadOfficer = new JButton("Load Officer");
-			btnLoadOfficer.setBounds(12, 142, 134, 25);
+			btnLoadOfficer.setBounds(10, 208, 134, 25);
 			btnLoadOfficer.addActionListener(this);
 		}
 		return btnLoadOfficer;
@@ -600,7 +598,7 @@ public class GUIOfficer extends JFrame implements ActionListener
 		if (btnAddOfficer == null)
 		{
 			btnAddOfficer = new JButton("Add Officer");
-			btnAddOfficer.setBounds(304, 142, 117, 25);
+			btnAddOfficer.setBounds(302, 208, 117, 25);
 			btnAddOfficer.addActionListener(this);
 		}
 		return btnAddOfficer;
@@ -670,7 +668,7 @@ public class GUIOfficer extends JFrame implements ActionListener
 		}
 		return lblPassword;
 	}
-	
+
 	private JPasswordField getPwdPassword()
 	{
 		if (pwdPassword == null)
@@ -681,6 +679,28 @@ public class GUIOfficer extends JFrame implements ActionListener
 		}
 		return pwdPassword;
 	}
+	
+	private JTable getTable()
+	{
+		if (table == null)
+		{
+			table = new JTable();
+			table.setBounds(12, 57, 840, 140);
+			table.setModel(modOfficers);
+		}
+		return table;
+	}
+
+	private JScrollPane getScrollPane()
+	{
+		if (scrollPane == null)
+		{
+			scrollPane = new JScrollPane();
+			scrollPane.setBounds(12, 57, 840, 140);
+			scrollPane.setViewportView(table);
+		}
+		return scrollPane;
+	}
 
 	@Override
 	public void actionPerformed(ActionEvent e)
@@ -689,18 +709,18 @@ public class GUIOfficer extends JFrame implements ActionListener
 		{
 			if (e.getSource() == btnLoadOfficer)
 			{
-				doEnterViewMode();
-				doLoadOfficer((Officer) list.getSelectedValue());
+				doEnterMode(false);
+//				doLoadOfficer((Officer) modOfficers.);
 			}
 			else if (e.getSource() == btnAddOfficer)
 			{
 				doLoadOfficer(null);
-				doEnterEditMode();
+				doEnterMode(true);
 				btnSaveChanges.setVisible(true);
 			}
 			else if (e.getSource() == btnSaveChanges)
 			{
-				doEnterViewMode();
+				doEnterMode(false);
 				db.addOfficer(doCreateOfficerFromInput(true));
 				doFillList();
 			}
@@ -710,7 +730,7 @@ public class GUIOfficer extends JFrame implements ActionListener
 			}
 			else if (e.getSource() == btnDeleteOfficer)
 			{
-				Officer toDelete = list.getSelectedValue();
+				Officer toDelete = (Officer) modOfficer.getSelectedItem();
 				if (toDelete == currentOfficer)
 				{
 					throw new NotAuthorizedException("You cannot delete that account in which you are logged in!");
@@ -724,7 +744,7 @@ public class GUIOfficer extends JFrame implements ActionListener
 			else if (e.getSource() == btnSelectNewPicture)
 			{
 				File f = doSelectPicture();
-				//TODO Bild in lblPicture einfügen
+				// TODO Bild in lblPicture einfügen
 			}
 			else if (e.getSource() == btnChangePassword)
 			{
@@ -733,17 +753,19 @@ public class GUIOfficer extends JFrame implements ActionListener
 			}
 			else if (e.getSource() == mntmLoadLoggedinOfficer)
 			{
-				doEnterViewMode();
+				doEnterMode(false);
 				doLoadOfficer(currentOfficer);
 			}
 		}
 		catch (NotAuthorizedException notAuthEx)
 		{
-			JOptionPane.showMessageDialog(this, notAuthEx.getMessage(), "Error - " + Settings.APPLICATION_NAME, JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(this, notAuthEx.getMessage(), "Error - " + Settings.APPLICATION_NAME,
+					JOptionPane.ERROR_MESSAGE);
 		}
 		catch (Exception e2)
 		{
-			JOptionPane.showMessageDialog(this, e2.getMessage(), "Error - " + Settings.APPLICATION_NAME, JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(this, e2.getMessage(), "Error - " + Settings.APPLICATION_NAME,
+					JOptionPane.ERROR_MESSAGE);
 			e2.printStackTrace();
 		}
 
@@ -817,40 +839,23 @@ public class GUIOfficer extends JFrame implements ActionListener
 		}
 	}
 
-	private void doEnterEditMode()
+	private void doEnterMode(boolean isEditMode)
 	{
-		txtUsername.setEditable(true);
-		frmtdtxtfldIDCardNumber.setEditable(true);
-		txtNationality.setEditable(true);
-		frmtdtxtfldDateOfBirth.setEditable(true);
-		txtBirthplace.setEditable(true);
-		txtAddress.setEditable(true);
-		txtName.setEditable(true);
-		txtLastName.setEditable(true);
-		comboBoxRank.setEnabled(true);
-		comboBoxGender.setEnabled(true);
+		txtUsername.setEditable(isEditMode);
+		frmtdtxtfldIDCardNumber.setEditable(isEditMode);
+		txtNationality.setEditable(isEditMode);
+		frmtdtxtfldDateOfBirth.setEditable(isEditMode);
+		txtBirthplace.setEditable(isEditMode);
+		txtAddress.setEditable(isEditMode);
+		txtName.setEditable(isEditMode);
+		txtLastName.setEditable(isEditMode);
+		comboBoxRank.setEnabled(isEditMode);
+		comboBoxGender.setEnabled(isEditMode);
 
-		btnSaveChanges.setVisible(true);
-		pwdPassword.setVisible(true);
-		lblPassword.setVisible(true);
-	}
-
-	private void doEnterViewMode()
-	{
-		txtUsername.setEditable(false);
-		frmtdtxtfldIDCardNumber.setEditable(false);
-		txtNationality.setEditable(false);
-		frmtdtxtfldDateOfBirth.setEditable(false);
-		txtBirthplace.setEditable(false);
-		txtAddress.setEditable(false);
-		txtName.setEditable(false);
-		txtLastName.setEditable(false);
-		comboBoxRank.setEnabled(false);
-		comboBoxGender.setEnabled(false);
-
-		btnSaveChanges.setVisible(false);
-		pwdPassword.setVisible(false);
-		lblPassword.setVisible(false);
+		btnSaveChanges.setVisible(isEditMode);
+		pwdPassword.setVisible(isEditMode);
+		lblPassword.setVisible(isEditMode);
+		btnSelectNewPicture.setVisible(isEditMode);
 	}
 
 	private Officer doCreateOfficerFromInput(boolean isNewOfficer) throws Exception
@@ -868,18 +873,14 @@ public class GUIOfficer extends JFrame implements ActionListener
 		String birthplace = txtBirthplace.getText();
 		String username = txtUsername.getText();
 		char[] password = pwdPassword.getPassword();
-		//TODO dbg
-		System.out.println(String.valueOf(password));
 		EnumRank rank = (EnumRank) comboBoxRank.getSelectedItem();
 
 		o = new Officer(idCardNumber, nationality, picture, firstName, lastName, gender, address, dateOfBirth,
 				birthplace, username, password, rank);
-		
-		//TODO dbg
-		System.out.println(String.valueOf(o.getPassword()));
+
 		return o;
 	}
-	
+
 	private File doSelectPicture() throws Exception
 	{
 		JFileChooser chooser = new JFileChooser();
@@ -889,5 +890,4 @@ public class GUIOfficer extends JFrame implements ActionListener
 		System.out.println(chooser.getSelectedFile());
 		return chooser.getSelectedFile();
 	}
-
 }
