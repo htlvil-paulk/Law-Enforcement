@@ -6,10 +6,13 @@ import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -22,9 +25,12 @@ import javax.swing.JButton;
 import at.paulk.data.Database;
 import at.paulk.data.EnumRank;
 import at.paulk.data.Officer;
+import at.paulk.thread.ThClock;
+import at.paulk.thread.ThLoadTimer;
+
 import javax.swing.SwingConstants;
 
-public class GUIMain extends JFrame implements ActionListener
+public class GUIMain extends JFrame implements ActionListener, WindowListener
 {
 
 	/**
@@ -45,14 +51,20 @@ public class GUIMain extends JFrame implements ActionListener
 	private JButton btnOfficerManagement;
 	private JButton btnLogout;
 	private JLabel lblWelcome;
-	private JLabel label;
+	private JLabel lblClock;
+
+	private GUIOffender offenderGUI;
+	private GUIOfficer officerGUI;
+	private GUISearch searchGUI;
 
 	private Officer currentOfficer;
 	private Database db;
+	private ThClock clock;
 
 	/**
 	 * Create the frame.
-	 * @throws SQLException 
+	 * 
+	 * @throws SQLException
 	 */
 	public GUIMain() throws SQLException
 	{
@@ -72,11 +84,13 @@ public class GUIMain extends JFrame implements ActionListener
 		contentPane.add(getLabel());
 		initializeNonGUIComponents();
 	}
-	
+
 	private void initializeNonGUIComponents() throws SQLException
 	{
 		db = Database.createInstance();
 		doLogout();
+		clock = new ThClock(lblClock);
+		clock.start();
 	}
 
 	private JPanel getLoginPanel()
@@ -151,7 +165,7 @@ public class GUIMain extends JFrame implements ActionListener
 		if (lblBanner == null)
 		{
 			lblBanner = new JLabel(Settings.POLICE_DEPARTMENT_NAME);
-			lblBanner.setBackground(Settings.SECONDARY_COLOR); //SecondaryColor
+			lblBanner.setBackground(Settings.SECONDARY_COLOR); // SecondaryColor
 			lblBanner.setOpaque(true);
 			lblBanner.setBounds(12, 30, 862, 61);
 		}
@@ -226,16 +240,15 @@ public class GUIMain extends JFrame implements ActionListener
 
 	private JLabel getLabel()
 	{
-		if (label == null)
+		if (lblClock == null)
 		{
-			label = new JLabel(LocalDate.now().format(
-					DateTimeFormatter.ofPattern("dd.MM.uuuu"))
-					+ " - " + LocalTime.now());
-			label.setHorizontalAlignment(SwingConstants.RIGHT);
-			label.setHorizontalTextPosition(SwingConstants.CENTER);
-			label.setBounds(448, 513, 426, 15);
+			lblClock = new JLabel(
+					LocalDate.now().format(DateTimeFormatter.ofPattern("dd.MM.uuuu")) + " - " + LocalTime.now());
+			lblClock.setHorizontalAlignment(SwingConstants.RIGHT);
+			lblClock.setHorizontalTextPosition(SwingConstants.CENTER);
+			lblClock.setBounds(448, 513, 426, 15);
 		}
-		return label;
+		return lblClock;
 	}
 
 	@Override
@@ -243,40 +256,51 @@ public class GUIMain extends JFrame implements ActionListener
 	{
 		try
 		{
-
 			if (e.getSource() == btnLogin)
 			{
 				doLogin(txtUsername.getText(), pwdPassword.getPassword());
 			}
 			else if (e.getSource() == btnAddRecord)
 			{
-				new GUIOffender(currentOfficer);
+				openGUI(GUIOffender.class);
 			}
 			else if (e.getSource() == btnOfficerManagement)
 			{
-				new GUIOfficer(currentOfficer);
+				openGUI(GUIOfficer.class);
 			}
 			else if (e.getSource() == btnSearch)
 			{
-				new GUISearch(currentOfficer);
+				openGUI(GUISearch.class);
 			}
 			else if (e.getSource() == btnLogout)
 			{
+				closeGUI(offenderGUI);
+				closeGUI(searchGUI);
+				closeGUI(officerGUI);
 				doLogout();
 			}
+		}
+		catch (SQLException sqlex)
+		{
+			lblWelcome.setText("Error: " + sqlex.getMessage());
+			JOptionPane.showMessageDialog(this, sqlex.getMessage(), "Error " + Settings.APPLICATION_NAME,
+					JOptionPane.ERROR_MESSAGE);
+			sqlex.printStackTrace();
 		}
 		catch (Exception e1)
 		{
 			lblWelcome.setText("Error: " + e1.getMessage());
+			JOptionPane.showMessageDialog(this, e1.getMessage(), "Error " + Settings.APPLICATION_NAME,
+					JOptionPane.ERROR_MESSAGE);
 			e1.printStackTrace();
 		}
 	}
 
 	public void doLogin(String username, char[] password) throws Exception
 	{
-		 currentOfficer = db.login(username, password);
+		currentOfficer = db.login(username, password);
 
-		if(currentOfficer.getRank() != EnumRank.ASPIRANT)
+		if (currentOfficer.getRank() != EnumRank.ASPIRANT)
 		{
 			btnAddRecord.setEnabled(true);
 		}
@@ -284,19 +308,20 @@ public class GUIMain extends JFrame implements ActionListener
 		btnSearch.setEnabled(true);
 		btnOfficerManagement.setEnabled(true);
 		btnLogout.setEnabled(true);
-		lblWelcome.setText("Welcome, " + currentOfficer.getRank().toString() + " " + currentOfficer.getLastName() + "!");
+		lblWelcome
+				.setText("Welcome, " + currentOfficer.getRank().toString() + " " + currentOfficer.getLastName() + "!");
 		btnLogin.setVisible(false);
 		mainPanel.setVisible(true);
 		txtUsername.setEnabled(false);
 		pwdPassword.setEnabled(false);
 	}
-	
+
 	private void doLogout()
 	{
 		currentOfficer = null;
-		for(Component cmp : mainPanel.getComponents())
+		for (Component cmp : mainPanel.getComponents())
 		{
-			if(cmp instanceof JButton )
+			if (cmp instanceof JButton)
 			{
 				cmp.setEnabled(false);
 			}
@@ -307,5 +332,106 @@ public class GUIMain extends JFrame implements ActionListener
 		txtUsername.setEnabled(true);
 		pwdPassword.setEnabled(true);
 		lblWelcome.setText("Please login!");
+	}
+
+	private void openGUI(Class f) throws Exception
+	{
+		if (f == GUIOffender.class && offenderGUI == null)
+		{
+			offenderGUI = new GUIOffender(currentOfficer);
+			offenderGUI.addWindowListener(this);
+		}
+		else if (f == GUISearch.class && searchGUI == null)
+		{
+			searchGUI = new GUISearch(currentOfficer);
+			searchGUI.addWindowListener(this);
+		}
+		else if (f == GUIOfficer.class && officerGUI == null)
+		{
+			officerGUI = new GUIOfficer(currentOfficer);
+			officerGUI.addWindowListener(this);
+		}
+	}
+
+	private void closeGUI(JFrame f)
+	{
+		if (f != null)
+		{
+			if (f instanceof GUIOffender)
+			{
+				offenderGUI.dispose();
+				offenderGUI = null;
+			}
+			else if (f instanceof GUISearch)
+			{
+				searchGUI.dispose();
+				searchGUI = null;
+			}
+			else if (f instanceof GUIOfficer)
+			{
+				officerGUI.dispose();
+				officerGUI = null;
+			}
+		}
+	}
+
+	@Override
+	public void windowOpened(WindowEvent e)
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void windowClosing(WindowEvent e)
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void windowClosed(WindowEvent e)
+	{
+		if(e.getSource() == offenderGUI)
+		{
+			offenderGUI = null;
+		}
+		else if(e.getSource() == officerGUI)
+		{
+			officerGUI = null;
+		}
+		else if(e.getSource() == searchGUI)
+		{
+			searchGUI = null;
+		}
+		
+	}
+
+	@Override
+	public void windowIconified(WindowEvent e)
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void windowDeiconified(WindowEvent e)
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void windowActivated(WindowEvent e)
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void windowDeactivated(WindowEvent e)
+	{
+		// TODO Auto-generated method stub
+		
 	}
 }

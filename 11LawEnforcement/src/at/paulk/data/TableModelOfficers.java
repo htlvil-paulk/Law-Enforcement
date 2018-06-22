@@ -2,8 +2,12 @@ package at.paulk.data;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.EventListener;
 
 import javax.swing.table.AbstractTableModel;
+
+import at.paulk.misc.EventCellException;
+import at.paulk.misc.OfficerException;
 
 public class TableModelOfficers extends AbstractTableModel
 {
@@ -14,8 +18,13 @@ public class TableModelOfficers extends AbstractTableModel
 	private String[] columnNames = { "Rank" , "First name", "Last name", "Gender", "Date of birth", "ID Card Number", "Nationality", "Officer ID", "Username" };
 	private Database db;
 	private ArrayList<Officer> collOfficers;
+	private OnExceptionInTableModelListener listener = null;
 	
-
+	public interface OnExceptionInTableModelListener extends EventListener
+	{
+		void handleTableModelException(EventCellException event);
+	}
+	
 	public TableModelOfficers() throws Exception
 	{
 		db = Database.createInstance();
@@ -102,7 +111,14 @@ public class TableModelOfficers extends AbstractTableModel
 		}
 		catch (Exception ex)
 		{
-			ex.printStackTrace();
+			if (listener != null)
+			{
+				listener.handleTableModelException(new EventCellException(this, ex.getMessage()));
+			}
+			else
+			{
+				addOnExceptionInTableModelListner(listener);
+			}
 		}
 		
 		return returnValue;
@@ -165,12 +181,46 @@ public class TableModelOfficers extends AbstractTableModel
 			}
 			
 			db.updateOfficer(o);
-			this.fireTableDataChanged();
+			fireTableCellUpdated(row, col);
 		}
 		catch (Exception e)
 		{
-			e.printStackTrace();
+			if (listener != null)
+			{
+				listener.handleTableModelException(new EventCellException(this, e.getMessage()));
+			}
 		}
 	}
-
+	
+	public Officer doGetOfficerFromRow(int row)
+	{
+		return collOfficers.get(row);
+	}
+	
+	public void addOfficer(Officer o) throws Exception
+	{
+		db.addOfficer(o);
+		doReloadTable();
+		
+		this.fireTableDataChanged();
+	}
+	
+	public void removeOfficer(Officer o) throws SQLException, OfficerException
+	{
+		db.deleteOfficer(o);
+		collOfficers.remove(o);
+		
+		this.fireTableDataChanged();
+	}
+	
+	public void doReloadTable() throws Exception
+	{
+		collOfficers = db.selectOfficers();
+		this.fireTableDataChanged();
+	}
+	
+	public void addOnExceptionInTableModelListner(OnExceptionInTableModelListener listener)
+	{
+		this.listener = listener;
+	}
 }

@@ -1,7 +1,6 @@
 package at.paulk.main;
 
 import java.sql.SQLException;
-
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 

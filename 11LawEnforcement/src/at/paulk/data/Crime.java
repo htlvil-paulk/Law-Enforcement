@@ -1,6 +1,5 @@
 package at.paulk.data;
 
-import java.sql.Clob;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -12,10 +11,10 @@ public class Crime
 	private String shortText;
 	private LocalDateTime crimeTime;
 	private String crimeScene;
-	private Clob longText;
+	private String longText;
 	private Suspect mainSuspect;
 
-	public Crime(String fileNumber, String shortText, LocalDateTime crimeTime, String crimeScene, Clob longText,
+	public Crime(String fileNumber, String shortText, LocalDateTime crimeTime, String crimeScene, String longText,
 			Suspect mainSuspect)
 	{
 		setFileNumber(fileNumber);
@@ -27,13 +26,13 @@ public class Crime
 	}
 
 	public Crime(String shortText, LocalDateTime crimeTime,
-			String crimeScene, Clob longText, Suspect mainSuspect)
+			String crimeScene, String longText, Suspect mainSuspect)
 	{
 		this(createFileNumber(mainSuspect) ,shortText, crimeTime, crimeScene, longText, mainSuspect);
 	}
 	
 	public Crime(String shortText, LocalDate date, LocalTime time,
-			String crimeScene, Clob longText, Suspect mainSuspect)
+			String crimeScene, String longText, Suspect mainSuspect)
 	{
 		this(createFileNumber(mainSuspect) ,shortText, time.atDate(date), crimeScene, longText, mainSuspect);
 	}
@@ -72,19 +71,24 @@ public class Crime
 	
 	public String getCrimeTimeAsString()
 	{
-		return crimeTime.format(DateTimeFormatter.ofPattern("dd.MM.uuuu")) + crimeTime.format(DateTimeFormatter.ISO_LOCAL_TIME);
+		return crimeTime.format(DateTimeFormatter.ofPattern("dd.MM.uuuu HH:mm:ss"));
 	}
 
 	public void setCrimeTime(LocalDateTime crimeTime)
 	{
 		this.crimeTime = crimeTime;
 	}
+	
+	public void setCrimeTime(String crimeTime)
+	{
+		setCrimeTime(LocalDateTime.parse(crimeTime, DateTimeFormatter.ofPattern("dd.MM.uuuu HH:mm:ss")));
+	}
 
-	public Clob getLongText()
+	public String getLongText()
 	{
 		return longText;
 	}
-	public void setLongText(Clob longText)
+	public void setLongText(String longText)
 	{
 		this.longText = longText;
 	}
@@ -100,6 +104,15 @@ public class Crime
 
 	public static String createFileNumber(Suspect s)
 	{
+		//Pattern: AZ/<Year>-<DayOfYear>-<MinuteOfDay>-<LastName><ID>
 		return "AZ/" + LocalDate.now().getYear() + "-" + LocalDate.now().getDayOfYear() + LocalTime.now().toSecondOfDay()/60 + "-" + s.getLastName().replace(' ', '_') + s.getId();
 	}
+
+	@Override
+	public String toString()
+	{
+		return fileNumber + ": " + shortText + "; crimeScene=" + crimeScene + "]";
+	}
+	
+	
 }

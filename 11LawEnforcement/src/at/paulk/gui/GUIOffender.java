@@ -3,6 +3,8 @@ package at.paulk.gui;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.MaskFormatter;
 import javax.swing.JLabel;
@@ -13,7 +15,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.sql.Blob;
-import java.sql.Clob;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.time.LocalDate;
@@ -31,11 +32,8 @@ import at.paulk.data.Crime;
 import at.paulk.data.Database;
 import at.paulk.data.EnumFlag;
 import at.paulk.data.EnumGender;
-import at.paulk.data.EnumRank;
 import at.paulk.data.Officer;
 import at.paulk.data.Suspect;
-import at.paulk.data.MyClob;
-
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -44,7 +42,7 @@ import javax.swing.JButton;
 import javax.swing.JList;
 import java.awt.GridLayout;
 
-public class GUIOffender extends JFrame implements ActionListener
+public class GUIOffender extends JFrame implements ActionListener, ListSelectionListener
 {
 	/**
 	 * 
@@ -96,16 +94,19 @@ public class GUIOffender extends JFrame implements ActionListener
 
 	private JPanel committedCrimesPanel;
 	private JLabel lblCommittedCrimes;
-	private JButton btnSelectPicture;
+	private JButton btnUploadPicture;
 	private JButton btnAddCrime;
 
 	// Non-GUI Components
 	private Database db;
 	private Officer currentOfficer;
 	private Suspect currentSuspect;
+	private JButton btnShowCrime;
+	private JButton btnReloadCrimes;
 
 	/**
-	 * Create the frame. if the Suspect is null, the suspect creation view will be opened
+	 * Create the frame. if the Suspect is null, the suspect creation view will be
+	 * opened
 	 * 
 	 * @throws Exception
 	 */
@@ -129,7 +130,7 @@ public class GUIOffender extends JFrame implements ActionListener
 		contentPane.add(getCommittedCrimesPanel());
 		contentPane.add(getButtonPanel());
 		initializeNonGUIComponents(officer, s);
-		
+
 		boolean isSuspectDefined = currentSuspect != null;
 		if (!isSuspectDefined)
 		{
@@ -140,6 +141,8 @@ public class GUIOffender extends JFrame implements ActionListener
 			doEnterMode(false);
 			doLoadSuspect(currentSuspect);
 		}
+		
+		this.setTitle("Offenders - " + Settings.APPLICATION_NAME);
 		setVisible(true);
 	}
 
@@ -150,7 +153,7 @@ public class GUIOffender extends JFrame implements ActionListener
 	{
 		this(officer, null);
 	}
-	
+
 	private void initializeNonGUIComponents(Officer officer, Suspect s) throws SQLException
 	{
 		currentOfficer = officer;
@@ -167,7 +170,7 @@ public class GUIOffender extends JFrame implements ActionListener
 			infoPanel.setLayout(null);
 			infoPanel.add(getLblHeaderInformation());
 			infoPanel.add(getLblPicture());
-			infoPanel.add(getBtnSelectPicture());
+			infoPanel.add(getBtnUploadPicture());
 			infoPanel.add(getLblName());
 			infoPanel.add(getTxtName());
 			infoPanel.add(getLblLastName());
@@ -610,8 +613,10 @@ public class GUIOffender extends JFrame implements ActionListener
 			buttonPanel = new JPanel();
 			buttonPanel.setBounds(12, 704, 872, 37);
 			buttonPanel.setLayout(new GridLayout(0, 5, 0, 0));
-			buttonPanel.add(getBtnSaveSuspect());
+			buttonPanel.add(getBtnShowCrime());
 			buttonPanel.add(getBtnAddCrime());
+			buttonPanel.add(getBtnSaveSuspect());
+			buttonPanel.add(getBtnReloadCrimes());
 		}
 		return buttonPanel;
 	}
@@ -632,20 +637,21 @@ public class GUIOffender extends JFrame implements ActionListener
 		{
 			list = new JList<Crime>();
 			list.setBounds(12, 53, 852, 51);
+			list.addListSelectionListener(this);
 			list.setModel(modCrimes);
 		}
 		return list;
 	}
 
-	private JButton getBtnSelectPicture()
+	private JButton getBtnUploadPicture()
 	{
-		if (btnSelectPicture == null)
+		if (btnUploadPicture == null)
 		{
-			btnSelectPicture = new JButton("Select picture");
-			btnSelectPicture.setBounds(12, 226, 149, 23);
-			btnSelectPicture.addActionListener(this);
+			btnUploadPicture = new JButton("Upload picture");
+			btnUploadPicture.setBounds(12, 226, 149, 23);
+			btnUploadPicture.addActionListener(this);
 		}
-		return btnSelectPicture;
+		return btnUploadPicture;
 	}
 
 	private JButton getBtnAddCrime()
@@ -657,6 +663,26 @@ public class GUIOffender extends JFrame implements ActionListener
 		}
 		return btnAddCrime;
 	}
+	
+	private JButton getBtnReloadCrimes()
+	{
+		if (btnReloadCrimes == null)
+		{
+			btnReloadCrimes = new JButton("Reload crime table");
+			btnReloadCrimes.addActionListener(this);
+		}
+		return btnReloadCrimes;
+	}
+
+	private JButton getBtnShowCrime()
+	{
+		if (btnShowCrime == null)
+		{
+			btnShowCrime = new JButton("Show Crime");
+			btnShowCrime.addActionListener(this);
+		}
+		return btnShowCrime;
+	}
 
 	@Override
 	public void actionPerformed(ActionEvent e)
@@ -665,23 +691,36 @@ public class GUIOffender extends JFrame implements ActionListener
 		{
 			if (e.getSource() == btnSaveSuspect)
 			{
-				// db.addSuspect(doCreateOffenderFromInput());
+				db.insertSuspect(doCreateOffenderFromInput());
 				System.out.println(doCreateOffenderFromInput());
+				doEnterMode(false);
 			}
-			else if (e.getSource() == btnSelectPicture)
+			else if (e.getSource() == btnUploadPicture)
 			{
 				File f = doSelectPicture();
 
 				if (f != null)
 				{
-					// TODO Bild im Label setzen (aber richtig)
 					ImageIcon img = new ImageIcon(f.getPath());
 					lblPicture.setIcon(img);
 				}
+
+				// db.uploadPicture(currentSuspect, f);
 			}
 			else if (e.getSource() == btnAddCrime)
 			{
-				new GUICrime(currentOfficer, doCreateOffenderFromInput());
+				new GUICrime(currentOfficer, currentSuspect);
+			}
+			else if (e.getSource() == btnShowCrime)
+			{
+				new GUICrime(currentOfficer, currentSuspect, (Crime) list.getSelectedValue());
+			}
+			else if (e.getSource() == btnReloadCrimes)
+			{
+				if (currentSuspect != null)
+				{
+					doFillCrimeList(currentSuspect);					
+				}
 			}
 		}
 		catch (Exception e2)
@@ -713,8 +752,7 @@ public class GUIOffender extends JFrame implements ActionListener
 		String address = txtAddress.getText();
 		String dateOfBirth = frmtdtxtfldDateOfBirth.getText();
 		String birthplace = txtBirthplace.getText();
-		MyClob description = new MyClob();
-		description.setString(1, txtpnDescription.getText());
+		String description = txtpnDescription.getText();
 
 		s = new Suspect(idCardNumber, nationality, picture, firstName, lastName, gender, address, dateOfBirth,
 				birthplace, description);
@@ -765,6 +803,7 @@ public class GUIOffender extends JFrame implements ActionListener
 		frmtdtxtfldDateOfBirth.setEditable(isEditMode);
 		txtBirthplace.setEditable(isEditMode);
 		comboBoxGender.setEnabled(isEditMode);
+		txtpnDescription.setEditable(isEditMode);
 		for (Component c : flagPanel.getComponents())
 		{
 			if (c instanceof JCheckBox)
@@ -772,11 +811,12 @@ public class GUIOffender extends JFrame implements ActionListener
 				c.setEnabled(isEditMode);
 			}
 		}
-		btnSaveSuspect.setVisible(isEditMode);
-		btnAddCrime.setVisible(!isEditMode);
+		btnSaveSuspect.setEnabled(isEditMode);
+		btnAddCrime.setEnabled(!isEditMode);
+		btnShowCrime.setEnabled((modCrimes.getSize() > 0));
 	}
-	
-	private void doLoadSuspect(Suspect s)
+
+	private void doLoadSuspect(Suspect s) throws SQLException
 	{
 		frmtdtxtfldIDCardNumber.setText(("" + s.getIdCardNumber()));
 		txtNationality.setText(s.getNationality());
@@ -785,19 +825,40 @@ public class GUIOffender extends JFrame implements ActionListener
 		txtAddress.setText(s.getAddress());
 		frmtdtxtfldDateOfBirth.setText(s.getDateOfBirthAsString());
 		txtBirthplace.setText(s.getBirthplace());
+		txtpnDescription.setText(s.getDescription());
 		comboBoxGender.setSelectedItem(s.getGender());
-		
+
 		for (Component c : flagPanel.getComponents())
 		{
 			if (c instanceof JCheckBox)
 			{
-				if(s.hasFlag(c.getName()))
+				JCheckBox cbx = (JCheckBox) c;
+				if (s.hasFlag(cbx.getName()))
 				{
-					c.setEnabled(true);
+					cbx.setSelected(true);
 				}
 			}
 		}
-		
+
+		doFillCrimeList(s);
 	}
 
+	@Override
+	public void valueChanged(ListSelectionEvent e)
+	{
+		try
+		{
+			if (e.getSource() == list)
+			{
+				if (list.getSelectedIndex() != -1)
+				{
+					btnShowCrime.setEnabled(true);
+				}
+			}
+		}
+		catch (Exception ex)
+		{
+			ex.printStackTrace();
+		}
+	}
 }

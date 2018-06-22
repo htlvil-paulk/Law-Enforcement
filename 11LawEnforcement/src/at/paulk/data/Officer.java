@@ -68,15 +68,11 @@ public final class Officer extends Person
 	{
 		return username;
 	}
-
-	public int getPasswordHash()
-	{
-		return password.hashCode(); 
-		// Ordentlichen Hash-Algorithmus implementieren!
-	}	
+	
 	public void changePassword(char[] oldPassword, char[] newPassword) throws Exception
 	{
-		if(password == null || password.equals(oldPassword))
+
+		if(password == null || String.valueOf(oldPassword).equals(String.valueOf(password))) //Check ist blöd
 		{
 			password = newPassword;
 		}

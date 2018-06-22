@@ -1,6 +1,5 @@
 package at.paulk.gui;
 
-import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.SQLException;
@@ -16,8 +15,6 @@ import javax.swing.JLabel;
 import java.awt.Color;
 
 import javax.swing.JTextField;
-import javax.swing.ListModel;
-import javax.swing.ComboBoxModel;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 
@@ -36,7 +33,7 @@ public class GUISearch extends JFrame implements ActionListener
 	 */
 	private static final long serialVersionUID = 1L;
 	private JPanel contentPane;
-	private JPanel panel;
+	private JPanel inputPanel;
 	private JLabel lblSearchSuspect;
 	private JLabel lblName;
 	private JLabel lblLastName;
@@ -45,7 +42,7 @@ public class GUISearch extends JFrame implements ActionListener
 	private JTextField txtLastName;
 	private JFormattedTextField txtIDCardNumber;
 	private JButton btnSearchForSuspects;
-	private JPanel panel_1;
+	private JPanel resultsPanel;
 	private JLabel lblHeaderResults;
 
 	private Officer currentOfficer;
@@ -53,7 +50,7 @@ public class GUISearch extends JFrame implements ActionListener
 
 	private Database db;
 	private DefaultComboBoxModel<Suspect> modSuspects = new DefaultComboBoxModel<>();
-	private JPanel panel_2;
+	private JPanel actionPanel;
 	private JLabel lblHeaderActions;
 	private JButton btnSelectSuspect;
 
@@ -74,11 +71,13 @@ public class GUISearch extends JFrame implements ActionListener
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
-		contentPane.add(getPanel());
-		contentPane.add(getPanel_1());
-		contentPane.add(getPanel_2());
+		contentPane.add(getInputPanel());
+		contentPane.add(getResultsPanel());
+		contentPane.add(getActionPanel());
 		setVisible(true);
 		initializeNonGUIComponents(officer);
+		
+		this.setTitle("Suspect Search - " + Settings.APPLICATION_NAME);
 	}
 
 	private void initializeNonGUIComponents(Officer officer) throws SQLException
@@ -87,23 +86,23 @@ public class GUISearch extends JFrame implements ActionListener
 		currentOfficer = officer;
 	}
 
-	private JPanel getPanel() throws ParseException
+	private JPanel getInputPanel() throws ParseException
 	{
-		if (panel == null)
+		if (inputPanel == null)
 		{
-			panel = new JPanel();
-			panel.setBounds(12, 12, 862, 165);
-			panel.setLayout(null);
-			panel.add(getLblSearchSuspect());
-			panel.add(getLblName());
-			panel.add(getLblLastName());
-			panel.add(getLblIdCardNumber());
-			panel.add(getTxtName());
-			panel.add(getTxtLastName());
-			panel.add(getTxtIDCardNumber());
-			panel.add(getBtnSearchForSuspects());
+			inputPanel = new JPanel();
+			inputPanel.setBounds(12, 12, 862, 165);
+			inputPanel.setLayout(null);
+			inputPanel.add(getLblSearchSuspect());
+			inputPanel.add(getLblName());
+			inputPanel.add(getLblLastName());
+			inputPanel.add(getLblIdCardNumber());
+			inputPanel.add(getTxtName());
+			inputPanel.add(getTxtLastName());
+			inputPanel.add(getTxtIDCardNumber());
+			inputPanel.add(getBtnSearchForSuspects());
 		}
-		return panel;
+		return inputPanel;
 	}
 
 	private JLabel getLblSearchSuspect()
@@ -203,17 +202,17 @@ public class GUISearch extends JFrame implements ActionListener
 		return btnSearchForSuspects;
 	}
 
-	private JPanel getPanel_1()
+	private JPanel getResultsPanel()
 	{
-		if (panel_1 == null)
+		if (resultsPanel == null)
 		{
-			panel_1 = new JPanel();
-			panel_1.setBounds(12, 188, 862, 194);
-			panel_1.setLayout(null);
-			panel_1.add(getLblHeaderResults());
-			panel_1.add(getList());
+			resultsPanel = new JPanel();
+			resultsPanel.setBounds(12, 188, 862, 194);
+			resultsPanel.setLayout(null);
+			resultsPanel.add(getLblHeaderResults());
+			resultsPanel.add(getList());
 		}
-		return panel_1;
+		return resultsPanel;
 	}
 
 	private JLabel getLblHeaderResults()
@@ -238,58 +237,19 @@ public class GUISearch extends JFrame implements ActionListener
 		}
 		return list;
 	}
+	
 
-	@Override
-	public void actionPerformed(ActionEvent e)
+	private JPanel getActionPanel()
 	{
-		try
+		if (actionPanel == null)
 		{
-			if (e.getSource() == btnSearchForSuspects)
-			{
-				doSearchSuspects();
-			}
-			else if (e.getSource() == btnSelectSuspect)
-			{
-				new GUIOffender(currentOfficer, (Suspect)list.getSelectedValue());
-			}
+			actionPanel = new JPanel();
+			actionPanel.setBounds(12, 393, 862, 107);
+			actionPanel.setLayout(null);
+			actionPanel.add(getLblHeaderActions());
+			actionPanel.add(getBtnSelectSuspect());
 		}
-		catch (Exception e2)
-		{
-			e2.printStackTrace();
-		}
-
-	}
-
-	private void doSearchSuspects() throws SQLException
-	{
-		String name = txtName.getText();
-		String lastName = txtLastName.getText();
-		int idCardNumber = Integer.parseInt(txtIDCardNumber.getText());
-
-		ArrayList<Suspect> results = db.searchSuspects(name, lastName, idCardNumber);
-		doFillList(results);
-	}
-
-	private void doFillList(ArrayList<Suspect> results)
-	{
-		modSuspects.removeAllElements();
-		for (Suspect s : results)
-		{
-			modSuspects.addElement(s);
-		}
-	}
-
-	private JPanel getPanel_2()
-	{
-		if (panel_2 == null)
-		{
-			panel_2 = new JPanel();
-			panel_2.setBounds(12, 393, 862, 107);
-			panel_2.setLayout(null);
-			panel_2.add(getLblHeaderActions());
-			panel_2.add(getBtnSelectSuspect());
-		}
-		return panel_2;
+		return actionPanel;
 	}
 
 	private JLabel getLblHeaderActions()
@@ -309,8 +269,54 @@ public class GUISearch extends JFrame implements ActionListener
 		if (btnSelectSuspect == null)
 		{
 			btnSelectSuspect = new JButton("Select suspect");
-			btnSelectSuspect.setBounds(10, 52, 113, 30);
+			btnSelectSuspect.setBounds(10, 52, 160, 44);
+			btnSelectSuspect.addActionListener(this);
 		}
 		return btnSelectSuspect;
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent e)
+	{
+		try
+		{
+			if (e.getSource() == btnSearchForSuspects)
+			{
+				doSearchSuspects();
+			}
+			else if (e.getSource() == btnSelectSuspect)
+			{
+				Suspect selectedSuspect = (Suspect)list.getSelectedValue();
+				System.out.println(selectedSuspect);
+				new GUIOffender(currentOfficer, selectedSuspect);
+			}
+		}
+		catch (Exception e2)
+		{
+			e2.printStackTrace();
+		}
+
+	}
+
+	private void doSearchSuspects() throws SQLException
+	{
+		String name = txtName.getText();
+		String lastName = txtLastName.getText();
+		String idAsString = txtIDCardNumber.getText();
+		System.out.println(idAsString + "  " + idAsString.length());
+		int idCardNumber = (idAsString.equals("        ")) ? 0 : Integer.parseInt(idAsString);
+
+		ArrayList<Suspect> results = db.searchSuspects(name, lastName, idCardNumber);
+		doFillList(results);
+		lblHeaderResults.setText(results.size() + (results.size() == 1 ? " Result" : " Results"));
+	}
+
+	private void doFillList(ArrayList<Suspect> results)
+	{
+		modSuspects.removeAllElements();
+		for (Suspect s : results)
+		{
+			modSuspects.addElement(s);
+		}
 	}
 }

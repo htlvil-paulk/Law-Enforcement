@@ -11,9 +11,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
 import at.paulk.misc.OfficerException;
+import at.paulk.thread.ThLoadTimer;
 
 public class Database
 {
@@ -23,6 +25,7 @@ public class Database
 	private static final String USER = "d3c11";
 	private static final String PASSWD = "d3c";
 	private static boolean useLocalIPAddress = false;
+	private boolean isInitialized = false;
 
 	private Connection conn = null;
 	private static Database db;
@@ -32,6 +35,7 @@ public class Database
 		IP_ADDRESS = useLocalIPAddress ? "192.168.128.152" : "212.152.179.117";
 		PORT = "1521";
 		CONNECTION_STRING = "jdbc:oracle:thin:@" + IP_ADDRESS + ":" + PORT + ":ora11g";
+		isInitialized = true;
 		createConnection();
 	}
 
@@ -59,6 +63,11 @@ public class Database
 			conn.commit();
 			conn.close();
 		}
+	}
+
+	public boolean isInitialized()
+	{
+		return isInitialized;
 	}
 
 	public Officer login(String username, char[] password) throws Exception
@@ -118,36 +127,39 @@ public class Database
 	 *            the officer whose password should be changed
 	 * @param oldPassword
 	 * @param newPassword
-	 * @return true, if the change has been successfully processed
+	 * @throws Exception
+	 * @throws SQLException
 	 */
-	public boolean changePassword(Officer o, char[] oldPassword, char[] newPassword)
+	public void changePassword(Officer o, char[] oldPassword, char[] newPassword) throws SQLException, Exception
 	{
-		boolean isSuccessful = false;
+		o.changePassword(oldPassword, newPassword);
+		String select = "SELECT oc.password from OfficerCredential oc" + " WHERE id=?";
 
-		try
+		createConnection();
+
+		PreparedStatement stmt = conn.prepareStatement(select);
+
+		stmt.setInt(1, o.getOfficerId());
+
+		ResultSet rs = stmt.executeQuery();
+
+		if (!rs.next() || !String.valueOf(oldPassword).equals(rs.getString("password")))
 		{
-			o.changePassword(oldPassword, newPassword);
-			String select = "SELECT oc.password from OfficerCredential oc"
-					+" WHERE id=?";
-
-			PreparedStatement stmt = conn.prepareStatement(select);
-
-			stmt.setInt(1, o.getOfficerId());
-
-			ResultSet rs = stmt.executeQuery();
-
-			if (oldPassword.equals(rs.getString("password").toCharArray()))
-			{
-				isSuccessful = true;
-			}
-
-		}
-		catch (Exception ex)
-		{
-			System.out.println(ex);
+			throw new Exception("password doesn't match the old one!");
 		}
 
-		return isSuccessful;
+		String update = "UPDATE OfficerCredential " + " SET password=? " + " WHERE id=?";
+
+		PreparedStatement stmt2 = conn.prepareStatement(update);
+
+		stmt2.setString(1, String.valueOf(newPassword));
+		stmt2.setInt(2, o.getId());
+
+		System.out.println(o.getId());
+
+		stmt2.executeUpdate();
+
+		closeConnection();
 	}
 
 	public ArrayList<Officer> selectOfficers() throws Exception
@@ -190,13 +202,6 @@ public class Database
 		return officers;
 	}
 
-	/**
-	 * If the officer doesn't have a valid id, it will be added to the db, as it
-	 * cannot be updated otherwise, it will be updated
-	 * 
-	 * @param o
-	 * @throws SQLException
-	 */
 	public void addOfficer(Officer o) throws Exception
 	{
 		String insert1 = "INSERT INTO OfficerCredential VALUES(sqPerson.NEXTVAL, ?, ?, ?)";
@@ -244,9 +249,9 @@ public class Database
 				+ " SET idCardNumber=?, citizenship=?, name=?, lastName=?, picture=?, dateOfBirth=TO_DATE(?,'DD.MM.YYYY'), birthplace=?, gender=?, address=?"
 				+ " WHERE id=?";
 		createConnection();
-		
+
 		PreparedStatement stmt = conn.prepareStatement(update);
-		
+
 		stmt.setInt(1, o.getIdCardNumber());
 		stmt.setString(2, o.getNationality());
 		stmt.setString(3, o.getFirstName());
@@ -257,7 +262,7 @@ public class Database
 		stmt.setString(8, o.getGender().toString());
 		stmt.setString(9, o.getAddress());
 		stmt.setInt(10, o.getId());
-		
+
 		stmt.executeUpdate();
 
 		closeConnection();
@@ -322,11 +327,11 @@ public class Database
 		closeConnection();
 	}
 
-	public void addSuspect(Suspect suspect) throws Exception
+	public void insertSuspect(Suspect suspect) throws Exception
 	{
-		String insertPerson = "INSERT INTO Person VALUES(sqPerson.NEXTVAL, ?, ?, ?, ?, ?, TO_DATE(?,'DD.MM.YYYY HH24:MI:SS'), ?, ?, ?, 'SUSPECT', ?,  NULL)";
+		String insertPerson = "INSERT INTO Person VALUES(sqPerson.NEXTVAL, ?, ?, ?, ?, ?, TO_DATE(?,'DD.MM.YYYY HH24:MI:SS'), ?, ?, ?, 'SUSPECT', TO_CLOB(?),  NULL)";
 		String insertFlags = "INSERT INTO HasRemark VALUES (sqPerson.CURRVAL, ?)";
-		
+
 		createConnection();
 
 		PreparedStatement stmt = conn.prepareStatement(insertPerson);
@@ -340,45 +345,52 @@ public class Database
 		stmt.setString(7, suspect.getBirthplace());
 		stmt.setString(8, suspect.getGender().toString());
 		stmt.setString(9, suspect.getAddress());
+		stmt.setString(10, suspect.getDescription());
 
-		if ("".equals(""))
-		{
-			throw new Exception("not implemented");
-		}
-		
 		int returnValue = stmt.executeUpdate();
 
-		
-		//Nummerierung von 1-8 für jedes Vergehen.
-		
-		for(int i = 0; i <= 8; i++)
+		if (returnValue == 0)
 		{
-			
+			conn.rollback();
+			throw new SQLException("Failure while adding the Suspect to the database");
 		}
-		closeConnection();
 
+		for (EnumFlag f : suspect.getFlags())
+		{
+			PreparedStatement stmt2 = conn.prepareStatement(insertFlags);
+
+			stmt2.setInt(1, f.ordinal() + 1);
+			stmt2.executeUpdate();
+			if (returnValue == 0)
+			{
+				conn.rollback();
+				throw new SQLException("Failure while adding the Flags of the Suspect to the database");
+			}
+		}
+
+		closeConnection();
 	}
 
 	public ArrayList<Suspect> searchSuspects(String name, String lastName, int idCardNumber) throws SQLException
 	{
 		ArrayList<Suspect> results = new ArrayList<>();
-		
-		String search = "SELECT p.id, p.idcardnumber, p.citizenship, p.picture, p.name, p.lastname, p.dateofbirth, p.birthplace, p.gender, p.address, p.description FROM Person p"
-				+ " WHERE (idCardNumber=? OR name LIKE ? OR lastName LIKE ?) AND p.flagPerson LIKE 'SUSPECT'";
+
+		String search = "SELECT p.id, p.idcardnumber, p.citizenship, p.picture, p.name, p.lastname, p.dateofbirth, p.birthplace, p.gender, p.address, NVL(p.description, 'unknown') \"description\" FROM Person p"
+				+ " WHERE (TO_CHAR(idCardNumber) LIKE ? AND UPPER(name) LIKE UPPER(?) AND UPPER(lastName) LIKE UPPER(?)) AND p.flagPerson LIKE 'SUSPECT'";
 		createConnection();
-		
+
 		PreparedStatement stmt = conn.prepareStatement(search);
-		
-		stmt.setInt(1, idCardNumber);
-		stmt.setString(2, name);
-		stmt.setString(3, lastName);
-		
+
+		stmt.setString(1, (idCardNumber == 0) ? "%" : "%" + idCardNumber + "%");
+		stmt.setString(2, (name != null && name.length() > 0) ? "%" + name + "%" : "%");
+		stmt.setString(3, (lastName != null && lastName.length() > 0) ? "%" + lastName + "%" : "%");
+
 		ResultSet rs = stmt.executeQuery();
-		
+
 		while (rs.next())
 		{
 			int id = rs.getInt("id");
-			int idCardNr = rs.getInt("idcardnumber");
+			int fullIDCardNumber = rs.getInt("idcardnumber");
 			String citizenship = rs.getString("citizenship");
 			Blob picture = rs.getBlob("picture");
 			String fullFirstName = rs.getString("name");
@@ -387,50 +399,50 @@ public class Database
 			String birthPlace = rs.getString("birthplace");
 			EnumGender gender = EnumGender.valueOf(rs.getString("gender"));
 			String address = rs.getString("address");
-			Clob description = rs.getClob("description");
-			
-			Suspect newSuspect = new Suspect(id, idCardNr, citizenship, picture, fullFirstName, fullLastName, gender, birthPlace, dateOfBirth, address, description);
+
+			Clob clob = rs.getClob("description");
+			String description = clob.getSubString(1, (int) clob.length());
+
+			Suspect newSuspect = new Suspect(id, fullIDCardNumber, citizenship, picture, fullFirstName, fullLastName,
+					gender, birthPlace, dateOfBirth, address, description);
 			selectFlags(newSuspect);
-			
+
 			results.add(newSuspect);
 		}
-		
+
 		closeConnection();
-		
+
 		return results;
 	}
-	
+
 	private void selectFlags(Suspect s) throws SQLException
 	{
-		String queryFlags = "SELECT r.description FROM HasRemark hr" + 
-				" INNER JOIN Remark r ON hr.idRemark = r.id" + 
-				" WHERE idPerson=?";
+		String queryFlags = "SELECT r.description FROM HasRemark hr" + " INNER JOIN Remark r ON hr.idRemark = r.id"
+				+ " WHERE idPerson=?";
 		PreparedStatement stmt2 = conn.prepareStatement(queryFlags);
-		
+
 		stmt2.setInt(1, s.getId());
-		
+
 		ResultSet rsFlags = stmt2.executeQuery();
-		
+
 		while (rsFlags.next())
 		{
 			s.addFlag(rsFlags.getString("description"));
 		}
 	}
-	
-	
 
-	public ArrayList<Crime> selectCrimes(Suspect s) throws SQLException
+	public ArrayList<Crime> selectCrimes(Suspect mainSuspect) throws SQLException
 	{
 		ArrayList<Crime> results = new ArrayList<>();
 
-		String select = "SELECT c.fileNumber, c.shortText, c.dateTime, c.crimeScene, c.longText" + "FROM Crime c"
-				+ "WHERE c.idMainSuspect = ?";
+		String select = "SELECT c.fileNumber, c.shortText, TO_CHAR(c.dateTime, 'DD.MM.YYYY HH24:MI:SS') \"dateTime\", c.crimeScene, c.longText FROM Crime c"
+				+ " WHERE c.idMainSuspect = ?" + " ORDER BY c.dateTime DESC";
 
 		createConnection();
 
 		PreparedStatement stmt = conn.prepareStatement(select);
 
-		stmt.setInt(1, s.getId());
+		stmt.setInt(1, mainSuspect.getId());
 
 		ResultSet rs = stmt.executeQuery();
 
@@ -438,32 +450,54 @@ public class Database
 		{
 			String fileNumber = rs.getString("fileNumber");
 			String shortText = rs.getString("shortText");
-			//LocalDateTime dateTime = rs.getDate("dateTime").toLocalDate();
+			LocalDateTime dateTime = LocalDateTime.parse(rs.getString("dateTime"),
+					DateTimeFormatter.ofPattern("dd.MM.uuuu HH:mm:ss"));
 			String crimeScene = rs.getString("crimeScene");
-			Clob longText = rs.getClob("longText");
+			Clob clob = rs.getClob("longText");
+			String longText = clob.getSubString(1, (int) clob.length());
 
-			//results.add(new Crime(fileNumber, shortText, dateTime, crimeScene, longText, s));
-			// LocalDate1, LocalDate2
+			results.add(new Crime(fileNumber, shortText, dateTime, crimeScene, longText, mainSuspect));
 		}
 		return results;
 	}
 
-	public void addCrime(Crime c) throws SQLException
+	public void insertCrime(Crime c) throws SQLException
 	{
-		String insert = "INSERT INTO Crime VALUES(?, ?, ?, TO_DATE(?, 'DD.MM.YYYY HH24:MI:SS'), ?, ?)";
-		
+		String insert = "INSERT INTO Crime VALUES(?, ?, ?, TO_DATE(?, 'DD.MM.YYYY HH24:MI:SS'), ?, TO_CLOB(?))";
+
 		createConnection();
-		
+
 		PreparedStatement stmt = conn.prepareStatement(insert);
-		
+
 		stmt.setString(1, c.getFileNumber());
 		stmt.setInt(2, c.getMainSuspect().getId());
 		stmt.setString(3, c.getShortText());
 		stmt.setString(4, c.getCrimeTimeAsString());
-		stmt.setClob(5, c.getLongText());
-		
+		stmt.setString(5, c.getCrimeScene());
+		stmt.setString(6, c.getLongText());
+
 		stmt.executeUpdate();
-		
+
+		closeConnection();
+	}
+
+	public void updateCrime(Crime committedCrime) throws SQLException
+	{
+		String update = "UPDATE Crime"
+				+ " SET shortText=?, dateTime=TO_DATE(?,'DD.MM.YYYY HH24:MI:SS'), crimeScene=?, longText=TO_CLOB(?)"
+				+ " WHERE fileNumber LIKE ?";
+		createConnection();
+
+		PreparedStatement stmt = conn.prepareStatement(update);
+
+		stmt.setString(1, committedCrime.getShortText());
+		stmt.setString(2, committedCrime.getCrimeTimeAsString());
+		stmt.setString(3, committedCrime.getCrimeScene());
+		stmt.setString(4, committedCrime.getLongText());
+		stmt.setString(5, committedCrime.getFileNumber());
+
+		System.out.println(stmt.executeUpdate());
+
 		closeConnection();
 	}
 }

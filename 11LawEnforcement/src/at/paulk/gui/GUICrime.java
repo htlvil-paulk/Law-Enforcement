@@ -3,30 +3,31 @@ package at.paulk.gui;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+import javax.swing.text.MaskFormatter;
 
 import at.paulk.data.Crime;
 import at.paulk.data.Database;
 import at.paulk.data.Officer;
 import at.paulk.data.Suspect;
-import at.paulk.data.MyClob;
+import at.paulk.misc.NotAuthorizedException;
 
 import javax.swing.JLabel;
 import javax.swing.JTextField;
 import javax.swing.JFormattedTextField;
 import javax.swing.JTextPane;
-import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.sql.Clob;
 import java.sql.SQLException;
+import java.text.ParseException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
-import javax.swing.JButton;
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 
 public class GUICrime extends JFrame implements ActionListener
 {
@@ -53,18 +54,34 @@ public class GUICrime extends JFrame implements ActionListener
 	private JMenuBar menuBar;
 	private JMenu mnCrime;
 	private JMenuItem mntmSaveChanges;
-	
-	//Non-GUI components
+
+	// Non-GUI components
 	private Officer loggedInOfficer;
 	private Suspect mainSuspect;
 	private Database db;
+	private boolean isNewCrime = true;
+	private Crime committedCrime = null;
 
 	/**
 	 * Create the frame.
-	 * @throws SQLException 
+	 * 
+	 * @throws Exception
 	 */
-	public GUICrime(Officer loggedInOfficer, Suspect s) throws SQLException
+	public GUICrime(Officer loggedInOfficer, Suspect s, Crime committedCrime) throws Exception
 	{
+		if (loggedInOfficer == null)
+		{
+			throw new NotAuthorizedException("Access denied! You need to log in!");
+		}
+		if (s == null)
+		{
+			throw new Exception("Suspect not defined!");
+		}
+		if (s.getId() == -99)
+		{
+			throw new Exception("Suspect is not in the database!");
+		}
+
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		setBounds(100, 100, 900, 550);
 		setJMenuBar(getMenuBar_1());
@@ -73,20 +90,31 @@ public class GUICrime extends JFrame implements ActionListener
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
 		contentPane.add(getPanel());
-		initializeNonGUIComponents(loggedInOfficer, s);
-		
+		initializeNonGUIComponents(loggedInOfficer, s, committedCrime);
 		setVisible(true);
+		this.setTitle("Crimes - " + Settings.APPLICATION_NAME);
 	}
-	
-	private void initializeNonGUIComponents(Officer o, Suspect s) throws SQLException
+
+	public GUICrime(Officer loggedInOfficer, Suspect s) throws Exception
+	{
+		this(loggedInOfficer, s, null);
+	}
+
+	private void initializeNonGUIComponents(Officer o, Suspect s, Crime c) throws SQLException
 	{
 		db = Database.createInstance();
 		loggedInOfficer = o;
 		mainSuspect = s;
-		txtFileNumber.setText(Crime.createFileNumber(s));
+		committedCrime = c;
+		txtFileNumber.setText(Crime.createFileNumber(mainSuspect));
+		if (committedCrime != null)
+		{
+			doLoadCrime(committedCrime);
+			isNewCrime = false;
+		}
 	}
 
-	private JPanel getPanel()
+	private JPanel getPanel() throws ParseException
 	{
 		if (panel == null)
 		{
@@ -133,17 +161,6 @@ public class GUICrime extends JFrame implements ActionListener
 		return lblFileNumber;
 	}
 
-	private JLabel getLblDate()
-	{
-		if (lblDate == null)
-		{
-			lblDate = new JLabel("Date:");
-			lblDate.setLabelFor(getFrmtdtxtfldDate());
-			lblDate.setBounds(22, 116, 180, 20);
-		}
-		return lblDate;
-	}
-
 	private JLabel getLblShortText()
 	{
 		if (lblShortText == null)
@@ -180,18 +197,34 @@ public class GUICrime extends JFrame implements ActionListener
 		return txtShortText;
 	}
 
-	private JFormattedTextField getFrmtdtxtfldDate()
+	private JLabel getLblDate() throws ParseException
+	{
+		if (lblDate == null)
+		{
+			lblDate = new JLabel("Date:");
+			lblDate.setLabelFor(getFrmtdtxtfldDate());
+			lblDate.setBounds(22, 116, 180, 20);
+		}
+		return lblDate;
+	}
+
+	private JFormattedTextField getFrmtdtxtfldDate() throws ParseException
 	{
 		if (frmtdtxtfldDate == null)
 		{
-			frmtdtxtfldDate = new JFormattedTextField();
+			String mask = "**.**.****";
+
+			MaskFormatter mf = new MaskFormatter(mask);
+			mf.setValidCharacters("1234567890.");
+
+			frmtdtxtfldDate = new JFormattedTextField(mf);
 			frmtdtxtfldDate.setText("01.01.2018");
 			frmtdtxtfldDate.setBounds(240, 119, 200, 20);
 		}
 		return frmtdtxtfldDate;
 	}
 
-	private JLabel getLblTime()
+	private JLabel getLblTime() throws ParseException
 	{
 		if (lblTime == null)
 		{
@@ -202,11 +235,16 @@ public class GUICrime extends JFrame implements ActionListener
 		return lblTime;
 	}
 
-	private JFormattedTextField getFrmtdtxtfldTime()
+	private JFormattedTextField getFrmtdtxtfldTime() throws ParseException
 	{
 		if (frmtdtxtfldTime == null)
 		{
-			frmtdtxtfldTime = new JFormattedTextField();
+			String mask = "**:**";
+
+			MaskFormatter mf = new MaskFormatter(mask);
+			mf.setValidCharacters("1234567890:");
+
+			frmtdtxtfldTime = new JFormattedTextField(mf);
 			frmtdtxtfldTime.setText("00:00");
 			frmtdtxtfldTime.setBounds(240, 151, 200, 20);
 		}
@@ -295,24 +333,56 @@ public class GUICrime extends JFrame implements ActionListener
 		{
 			if (e.getSource() == mntmSaveChanges)
 			{
-				db.addCrime(doCreateCrimeFromInput());
+				if (isNewCrime)
+				{
+					Crime c = doCreateCrimeFromInput();
+					db.insertCrime(c);
+					committedCrime = c;
+					JOptionPane.showMessageDialog(this, "Crime '" + committedCrime.getFileNumber() + "' added!",
+							"Crime added - " + Settings.APPLICATION_NAME, JOptionPane.INFORMATION_MESSAGE);
+				}
+				else
+				{
+					committedCrime.setCrimeScene(txtCrimeScene.getText());
+					committedCrime.setCrimeTime(LocalTime
+							.parse(frmtdtxtfldTime.getText(), DateTimeFormatter.ISO_LOCAL_TIME).atDate(LocalDate
+									.parse(frmtdtxtfldDate.getText(), DateTimeFormatter.ofPattern("dd.MM.uuuu"))));
+					committedCrime.setLongText(txtpnLongText.getText());
+					db.updateCrime(committedCrime);
+					JOptionPane.showMessageDialog(this, "Crime '" + committedCrime.getFileNumber() + "' updated!",
+							"Crime updated - " + Settings.APPLICATION_NAME, JOptionPane.INFORMATION_MESSAGE);
+				}
+				this.dispose();
 			}
 		}
 		catch (Exception ex)
 		{
 			ex.printStackTrace();
 		}
-		
+
 	}
 
 	private Crime doCreateCrimeFromInput()
 	{
+		String fileNumber = txtFileNumber.getText();
 		String shortText = txtShortText.getText();
 		LocalDate date = LocalDate.parse(frmtdtxtfldDate.getText(), DateTimeFormatter.ofPattern("dd.MM.uuuu"));
-		LocalTime time = LocalTime.parse(frmtdtxtfldTime.getText(), DateTimeFormatter.ISO_LOCAL_TIME);
+		LocalDateTime dateTime = LocalTime.parse(frmtdtxtfldTime.getText(), DateTimeFormatter.ISO_LOCAL_TIME)
+				.atDate(date);
 		String crimeScene = txtCrimeScene.getText();
-		MyClob longText = new MyClob(txtpnLongText.getText());
-		
-		return new Crime(shortText, date, time, crimeScene, longText, mainSuspect);
+		String longText = txtpnLongText.getText();
+
+		return new Crime(fileNumber, shortText, dateTime, crimeScene, longText, mainSuspect);
+	}
+
+	private void doLoadCrime(Crime c)
+	{
+		txtFileNumber.setText(c.getFileNumber());
+		txtShortText.setText(c.getShortText());
+		String[] dateParts = c.getCrimeTimeAsString().split(" ");
+		frmtdtxtfldDate.setText(dateParts[0]);
+		frmtdtxtfldTime.setValue(dateParts[1]);
+		txtCrimeScene.setText(c.getCrimeScene());
+		txtpnLongText.setText(c.getLongText());
 	}
 }

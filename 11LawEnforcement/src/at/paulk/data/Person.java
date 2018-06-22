@@ -1,8 +1,5 @@
 package at.paulk.data;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.sql.Blob;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
